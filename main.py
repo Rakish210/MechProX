@@ -27,7 +27,8 @@ class DashboardTab(StyledTab):
         stats = QHBoxLayout()
         for name, val in [("Toplam Poz", "42"), ("Malzeme", "18"), ("Blok", "7"), ("Modul", "1 (Sihhi)")]:
             card = QFrame()
-            card.setStyleSheet("background:#1e293b; border-radius:8px; padding:12px;")
+            card.setStyleSheet("background:#1e293b; border-radius:8px; padding:12px; border:1px solid #334155;")
+            card.setCursor(Qt.CursorShape.PointingHandCursor)
             cl = QVBoxLayout(card)
             cl.addWidget(QLabel(name))
             v = QLabel(val)
@@ -157,7 +158,7 @@ class Sidebar(QWidget):
     def __init__(self, on_select):
         super().__init__()
         self.setFixedWidth(200)
-        self.setStyleSheet("background:#1e293b;")
+        self.setStyleSheet("background:#1e293b; border-right:1px solid #334155;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 16, 12, 16)
         layout.setSpacing(8)
@@ -182,7 +183,8 @@ class Sidebar(QWidget):
         self.buttons = []
         for name, idx in modules:
             btn = QPushButton(name)
-            btn.setStyleSheet("text-align:left; padding:8px 12px; border-radius:4px; background:transparent; color:#94a3b8;")
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setStyleSheet("text-align:left; padding:8px 12px; border-radius:4px; background:transparent; color:#94a3b8; border:none;")
             btn.clicked.connect(lambda checked, i=idx: on_select(i))
             self.buttons.append(btn)
             layout.addWidget(btn)
@@ -260,6 +262,10 @@ class MainWindow(QMainWindow):
             QLineEdit, QComboBox, QSpinBox { background: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 4px; color: #f1f5f9; }
             QPushButton { background: #334155; color: #f1f5f9; border: none; padding: 6px 12px; border-radius: 4px; }
             QPushButton:hover { background: #475569; }
+            QPushButton:pressed { background: #1d4ed8; }
+            QTableWidget::item:hover { background: #334155; }
+            QTableWidget::item:selected { background: #2563eb; color: #ffffff; }
+            QFrame:hover { background: #263548; }
             QLabel { color: #e2e8f0; }
             QFrame { border: none; }
         """)

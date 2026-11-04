@@ -1,4 +1,5 @@
 import sys
+import os
 import random
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, QStackedWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -162,7 +163,8 @@ class Sidebar(QWidget):
         layout.setSpacing(8)
 
         logo_label = QLabel()
-        pixmap = QPixmap("logo.jpg")
+        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.jpg")
+        pixmap = QPixmap(logo_path)
         if not pixmap.isNull():
             logo_label.setPixmap(pixmap.scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)

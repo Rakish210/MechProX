@@ -1,11 +1,11 @@
 import sys
 import random
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget,
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, QStackedWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
                              QTableWidget, QTableWidgetItem, QHeaderView,
                              QComboBox, QSpinBox, QLineEdit, QFrame)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QPixmap
 
 
 class StyledTab(QWidget):
@@ -152,25 +152,107 @@ class AyarlarTab(StyledTab):
         self.layout.addStretch()
 
 
+class Sidebar(QWidget):
+    def __init__(self, on_select):
+        super().__init__()
+        self.setFixedWidth(200)
+        self.setStyleSheet("background:#1e293b;")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 16, 12, 16)
+        layout.setSpacing(8)
+
+        logo_label = QLabel()
+        pixmap = QPixmap("logo.jpg")
+        if not pixmap.isNull():
+            logo_label.setPixmap(pixmap.scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(logo_label)
+
+        app_name = QLabel("MechPro")
+        app_name.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        app_name.setStyleSheet("color:#f1f5f9;")
+        app_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(app_name)
+
+        layout.addSpacing(16)
+
+        modules = [("Goster Paneli", 0), ("BOM / BOQ", 1), ("Sihhi Tesisat", 2), ("Ayarlar", 3)]
+        self.buttons = []
+        for name, idx in modules:
+            btn = QPushButton(name)
+            btn.setStyleSheet("text-align:left; padding:8px 12px; border-radius:4px; background:transparent; color:#94a3b8;")
+            btn.clicked.connect(lambda checked, i=idx: on_select(i))
+            self.buttons.append(btn)
+            layout.addWidget(btn)
+
+        layout.addStretch()
+
+        self.active_idx = 0
+        self._highlight(0)
+
+    def _highlight(self, idx):
+        for i, btn in enumerate(self.buttons):
+            if i == idx:
+                btn.setStyleSheet("text-align:left; padding:8px 12px; border-radius:4px; background:#334155; color:#f1f5f9; font-weight:bold;")
+            else:
+                btn.setStyleSheet("text-align:left; padding:8px 12px; border-radius:4px; background:transparent; color:#94a3b8;")
+        self.active_idx = idx
+
+
+class Header(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setFixedHeight(50)
+        self.setStyleSheet("background:#1e293b; border-bottom:1px solid #334155;")
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(20, 0, 20, 0)
+
+        title = QLabel("MechPro - Faz 0 MVP")
+        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title.setStyleSheet("color:#f1f5f9;")
+        layout.addWidget(title)
+        layout.addStretch()
+
+        user_label = QLabel("Kullanici: Sef")
+        user_label.setStyleSheet("color:#94a3b8;")
+        layout.addWidget(user_label)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MechPro - Faz 0 MVP")
-        self.resize(1000, 700)
+        self.resize(1100, 700)
 
-        tabs = QTabWidget()
-        tabs.addTab(DashboardTab(), "Goster Paneli")
-        tabs.addTab(BomTab(), "BOM / BOQ")
-        tabs.addTab(HesapTab(), "Sihhi Tesisat")
-        tabs.addTab(AyarlarTab(), "Ayarlar")
-        self.setCentralWidget(tabs)
+        central = QWidget()
+        self.setCentralWidget(central)
+        main_layout = QHBoxLayout(central)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        self.sidebar = Sidebar(self._on_module_select)
+        main_layout.addWidget(self.sidebar)
+
+        right = QWidget()
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(0)
+
+        header = Header()
+        right_layout.addWidget(header)
+
+        self.stack = QStackedWidget()
+        self.stack.addWidget(DashboardTab())
+        self.stack.addWidget(BomTab())
+        self.stack.addWidget(HesapTab())
+        self.stack.addWidget(AyarlarTab())
+        right_layout.addWidget(self.stack)
+
+        main_layout.addWidget(right)
 
         self.setStyleSheet("""
             QMainWindow { background: #0f172a; }
             QWidget { background: #0f172a; color: #e2e8f0; font-family: Segoe UI; font-size: 13px; }
-            QTabWidget::pane { border: 1px solid #334155; border-radius: 4px; }
-            QTabBar::tab { background: #1e293b; color: #94a3b8; padding: 8px 16px; margin-right: 2px; border-radius: 4px 4px 0 0; }
-            QTabBar::tab:selected { background: #334155; color: #f1f5f9; }
             QTableWidget { background: #1e293b; gridline-color: #334155; }
             QHeaderView::section { background: #334155; color: #f1f5f9; padding: 4px; border: none; }
             QLineEdit, QComboBox, QSpinBox { background: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 4px; color: #f1f5f9; }
@@ -179,6 +261,11 @@ class MainWindow(QMainWindow):
             QLabel { color: #e2e8f0; }
             QFrame { border: none; }
         """)
+
+
+    def _on_module_select(self, idx):
+        self.stack.setCurrentIndex(idx)
+        self.sidebar._highlight(idx)
 
 
 def main():

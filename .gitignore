@@ -1,4 +1,53 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging and build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Test, coverage and static-analysis artifacts
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# IDE and editor state
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Local settings and secrets
 .env
+.env.*
+!.env.example
 *.key
 *.pem
 secrets/
+
+# Local application database artifacts
+/mechpro.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# OS-generated files
+.DS_Store
+Thumbs.db

@@ -42,7 +42,7 @@ logs/
 secrets/
 
 # Local application database artifacts
-/mechpro.db
+/mechprox.db
 *.db-wal
 *.db-shm
 *.sqlite

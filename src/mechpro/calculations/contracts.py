@@ -4,13 +4,12 @@ from datetime import date
 from typing import Protocol
 from uuid import UUID
 
-from mechpro.domain.base import PropertyValue
-from mechpro.domain.calculations import CalculationResult
+from mechpro.domain.base import PropertyValue, StandardReference
+from mechpro.domain.calculations import CalculationResult, CalculationRun
+from mechpro.domain.engineering import EngineeringObjectRecord
 from mechpro.domain.enums import CalculationPurpose
 from mechpro.domain.model import EngineeringModel
-from mechpro.domain.engineering import EngineeringObjectRecord
 from mechpro.domain.parameters import ParameterRevision
-from mechpro.domain.base import StandardReference
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +52,7 @@ class CalculationContext:
 
 @dataclass(frozen=True, slots=True)
 class CalculationExecution:
-    run: object
+    run: CalculationRun
     results: tuple[CalculationResult, ...]
     warnings: tuple[str, ...] = ()
     error: str | None = None

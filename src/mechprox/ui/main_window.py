@@ -106,7 +106,7 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.dashboard = DashboardPage(repository)
         self.projects = ProjectPage(repository)
-        self.parameters = ParameterRegistryPage(parameter_repository)
+        self.parameters = ParameterRegistryPage(parameter_repository, source_repository)
         self.calculations = GasDemandPage(repository, calculation_runner)
         self.catalogue = CataloguePage(catalogue_repository)
         self.sources = SourceRegistryPage(source_repository)

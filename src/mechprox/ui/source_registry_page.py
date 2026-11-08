@@ -268,7 +268,7 @@ class SourceRegistryPage(QWidget):
                 item.jurisdiction or "Global",
                 item.clause or "—",
                 item.title,
-                source.document_name if source else "—",
+                (source.document_name or source.uri or "—") if source else "—",
             )
             self._set_row(self.standard_table, row, values, item.id)
 

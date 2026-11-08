@@ -12,7 +12,7 @@ from mechpro.data.parameter_registry_repository import (
     ParameterAlreadyExistsError,
     ParameterRegistryRepository,
 )
-from mechpro.domain.base import Quantity, QuantityValue
+from mechpro.domain.base import Quantity, QuantityValue, ScalarValue
 from mechpro.domain.enums import InformationOrigin
 from mechpro.domain.parameters import (
     ParameterDefinition,
@@ -169,3 +169,68 @@ def test_duplicate_parameter_code_is_rejected(
 
     with pytest.raises(ParameterAlreadyExistsError):
         repository.register_definition(definition.model_copy(update={"id": uuid4()}))
+
+
+
+def test_invalid_canonical_unit_is_rejected(repository: ParameterRegistryRepository) -> None:
+    definition = ParameterDefinition(
+        code="GAS.INVALID_UNIT",
+        name="Invalid unit test",
+        discipline_code="GAS",
+        category_code="PRESSURE",
+        value_kind=ParameterValueKind.QUANTITY,
+        expected_dimension="[pressure]",
+        canonical_unit_code="meter",
+    )
+
+    with pytest.raises(ValueError, match="invalid canonical unit"):
+        repository.register_definition(definition)
+
+
+def test_ambiguous_approved_revisions_are_rejected(
+    repository: ParameterRegistryRepository,
+) -> None:
+    definition = _definition()
+    repository.register_definition(definition)
+    repository.add_revision(_revision(definition, Decimal("1.0"), revision_code="A"))
+    repository.add_revision(_revision(definition, Decimal("2.0"), revision_code="B"))
+
+    with pytest.raises(ParameterResolutionError, match="Ambiguous"):
+        repository.resolve(
+            definition.code,
+            jurisdiction_code=None,
+            project_id=None,
+            effective_date=date(2026, 11, 8),
+        )
+
+
+def test_scalar_parameter_can_be_resolved(repository: ParameterRegistryRepository) -> None:
+    definition = ParameterDefinition(
+        code="VENTILATION.TEST_FACTOR",
+        name="Scalar test factor",
+        discipline_code="VENTILATION",
+        category_code="FACTOR",
+        value_kind=ParameterValueKind.SCALAR,
+    )
+    repository.register_definition(definition)
+    revision = ParameterRevision(
+        definition_id=definition.id,
+        revision_code="A",
+        value=ScalarValue(value=Decimal("0.85")),
+        status=ParameterRevisionStatus.APPROVED,
+        origin=InformationOrigin.USER_INPUT,
+        created_by="test",
+        approved_by="test-approver",
+    )
+    repository.add_revision(revision)
+
+    resolved = repository.resolve(
+        definition.code,
+        jurisdiction_code=None,
+        project_id=None,
+        effective_date=date(2026, 11, 8),
+    )
+
+    assert resolved.id == revision.id
+    assert isinstance(resolved.value, ScalarValue)
+    assert resolved.value.value == Decimal("0.85")

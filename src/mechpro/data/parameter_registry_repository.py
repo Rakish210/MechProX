@@ -1,4 +1,5 @@
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
@@ -6,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from mechpro.data.models import ParameterDefinitionRecord, ParameterRevisionRecord
-from mechpro.domain.base import QuantityValue, ScalarValue
+from mechpro.domain.base import Quantity, QuantityValue, ScalarValue
 from mechpro.domain.parameters import (
     ParameterDefinition,
     ParameterRegistry,
@@ -38,6 +39,7 @@ class ParameterRegistryRepository:
         self._units = unit_service or UnitService()
 
     def register_definition(self, definition: ParameterDefinition) -> None:
+        self._validate_definition(definition)
         record = ParameterDefinitionRecord(
             id=str(definition.id),
             code=definition.code,
@@ -154,6 +156,22 @@ class ParameterRegistryRepository:
                 for record in records
             )
         return ParameterRegistry(definitions=definitions, revisions=revisions)
+
+    def _validate_definition(self, definition: ParameterDefinition) -> None:
+        if definition.value_kind == ParameterValueKind.SCALAR:
+            return
+        try:
+            self._units.validate(
+                Quantity(
+                    value=Decimal(1),
+                    unit_code=definition.canonical_unit_code or "",
+                ),
+                expected_dimension=definition.expected_dimension,
+            )
+        except UnitValidationError as exc:
+            raise ValueError(
+                f"Parameter '{definition.code}' has an invalid canonical unit: {exc}"
+            ) from exc
 
     def _validate_value(
         self,

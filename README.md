@@ -12,10 +12,11 @@ MechPro is a Python-first desktop engineering platform. It coordinates a shared,
 - Lossless JSON serialization and restore of project model snapshots.
 - Unit-aware quantities using an offline Pint registry.
 - Versioned Parameter Registry with immutable revisions, approval state, source traceability, validity windows and project/jurisdiction/global resolution.
+- Parameter Registry UI for creating definitions, adding revisions and reviewing revision history.
 - Source provenance, revisions, calculation snapshots and distinct BOM/BOQ contracts.
 - Ruff, Pyright, Pytest and Alembic migration workflow.
 
-The current desktop vertical slice supports project creation and local persistence. Parameter Registry persistence and deterministic value resolution are available as application services; a dedicated registry editor is not yet implemented. Engineering editors, calculation engines, live catalogues, production BOM/BOQ generation and CAD/BIM operations are not yet implemented.
+The current desktop vertical slice supports project creation and local persistence. Parameter Registry persistence, deterministic value resolution and basic registry management are implemented. Engineering editors, calculation engines, live product/poz catalogues, production BOM/BOQ generation and CAD/BIM operations are not yet implemented.
 
 ## Technology baseline
 

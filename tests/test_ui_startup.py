@@ -2,6 +2,8 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from typing import cast
+
 from PySide6.QtWidgets import QApplication
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -17,7 +19,14 @@ from mechprox.data.project_repository import ProjectRepository
 from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.engines.registry import create_default_calculation_engine_registry
 from mechprox.modules import create_builtin_module_specs
+from mechprox.ui.catalogue_page import CataloguePage
+from mechprox.ui.commercial_page import CommercialPage
+from mechprox.ui.engineering_data_page import EngineeringDataPage
+from mechprox.ui.gas_demand_page import GasDemandPage
 from mechprox.ui.main_window import MainWindow
+from mechprox.ui.parameter_registry_page import ParameterRegistryPage
+from mechprox.ui.project_page import ProjectPage
+from mechprox.ui.source_registry_page import SourceRegistryPage
 
 
 def test_main_window_is_composed_from_registered_module_pages(tmp_path) -> None:
@@ -65,15 +74,23 @@ def test_main_window_is_composed_from_registered_module_pages(tmp_path) -> None:
         pages = {
             spec.key: page for spec, page in zip(window._page_specs, window._pages, strict=True)
         }
-        assert pages["workspace.projects"].table.rowCount() == 0
-        assert pages["reference-data.parameters"].definition_table.rowCount() == 0
-        assert pages["reference-data.sources"].source_table.rowCount() == 0
-        assert pages["reference-data.sources"].standard_table.rowCount() == 0
-        assert pages["engineering.calculations"].project_combo.count() == 0
-        assert pages["reference-data.catalogue"].product_table.rowCount() == 0
-        assert pages["engineering.model"].table.rowCount() == 0
-        assert pages["commercial.takeoff"].bom_table.rowCount() == 0
-        assert pages["commercial.takeoff"].boq_table.rowCount() == 0
+        projects_page = cast(ProjectPage, pages["workspace.projects"])
+        parameter_page = cast(ParameterRegistryPage, pages["reference-data.parameters"])
+        source_page = cast(SourceRegistryPage, pages["reference-data.sources"])
+        calculations_page = cast(GasDemandPage, pages["engineering.calculations"])
+        catalogue_page = cast(CataloguePage, pages["reference-data.catalogue"])
+        engineering_page = cast(EngineeringDataPage, pages["engineering.model"])
+        commercial_page = cast(CommercialPage, pages["commercial.takeoff"])
+
+        assert projects_page.table.rowCount() == 0
+        assert parameter_page.definition_table.rowCount() == 0
+        assert source_page.source_table.rowCount() == 0
+        assert source_page.standard_table.rowCount() == 0
+        assert calculations_page.project_combo.count() == 0
+        assert catalogue_page.product_table.rowCount() == 0
+        assert engineering_page.table.rowCount() == 0
+        assert commercial_page.bom_table.rowCount() == 0
+        assert commercial_page.boq_table.rowCount() == 0
     finally:
         window.close()
         host.stop()

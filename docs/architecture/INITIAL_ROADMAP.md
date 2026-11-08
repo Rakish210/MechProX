@@ -32,7 +32,7 @@
 - First complete discipline workflow: natural gas.
 - Independent reference calculations, standards traceability and regression tests.
 - No AI-generated numeric engineering results; AI orchestrates deterministic tools only.
-- Status: calculation engine registry, explicit request/context contracts, revision-gated input capture, full object/parameter/standard snapshots, deterministic input/output hashes, result provenance and persisted failed/completed runs implemented. Gas appliance demand method v1.0.0 is implemented and registered. It converts appliance thermal input power to reference gas volume flow using an approved, user-supplied LHV parameter. Gas pipe sizing, velocity, pressure loss and regulator calculations remain open.
+- Status: calculation engine registry, explicit request/context contracts, revision-gated input capture, full object/parameter/standard snapshots, deterministic input/output hashes, result provenance and persisted failed/completed runs implemented. Gas appliance demand method v1.0.0 and its first desktop workflow are implemented. The user can add revision-controlled appliances, resolve an approved LHV parameter and persist reference-flow results. Gas pipe sizing, velocity, pressure loss, regulator calculations and typed reference-condition enforcement remain open.
 
 ## Phase 5 — Drawing analysis and AutoCAD integration
 - 2D drawing ingestion and entity/source mapping.

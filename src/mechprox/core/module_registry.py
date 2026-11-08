@@ -70,7 +70,11 @@ class ModuleManifest:
             raise ModuleRegistrationError(
                 f"Module '{self.module_id}' cannot depend on itself."
             )
-        if any(not item.strip() for item in (*self.dependencies, *self.capabilities)):
+        if any(not _MODULE_ID_PATTERN.fullmatch(item) for item in self.dependencies):
+            raise ModuleRegistrationError(
+                f"Module '{self.module_id}' declares an invalid dependency ID."
+            )
+        if any(not _MODULE_ID_PATTERN.fullmatch(item) for item in self.capabilities):
             raise ModuleRegistrationError(
                 f"Module '{self.module_id}' has an empty dependency or capability."
             )
@@ -147,6 +151,10 @@ class ModuleRegistry:
 
     def register(self, spec: ModuleSpec) -> None:
         manifest = spec.manifest
+        if not callable(spec.factory):
+            raise ModuleRegistrationError(
+                f"Module '{manifest.module_id}' requires a callable module factory."
+            )
         if manifest.api_version != self._api_version:
             raise ModuleRegistrationError(
                 f"Module '{manifest.module_id}' requires API {manifest.api_version}; "

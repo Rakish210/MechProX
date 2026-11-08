@@ -193,8 +193,36 @@ class ProjectRepository:
                     "A calculation result ID already exists in the project."
                 )
 
+            source_references = {
+                item.id: item for item in current_model.source_references
+            }
+            for snapshot in run.source_reference_snapshots:
+                existing = source_references.get(snapshot.id)
+                if existing is not None and existing != snapshot:
+                    raise CalculationAppendError(
+                        f"Source reference '{snapshot.id}' conflicts with the project snapshot."
+                    )
+                source_references[snapshot.id] = snapshot
+
+            standard_references = {
+                item.id: item for item in current_model.standard_references
+            }
+            for snapshot in run.standard_snapshots:
+                existing = standard_references.get(snapshot.id)
+                if existing is not None and existing != snapshot:
+                    raise CalculationAppendError(
+                        f"Standard reference '{snapshot.id}' conflicts with the project snapshot."
+                    )
+                standard_references[snapshot.id] = snapshot
+
             updated_model = current_model.model_copy(
                 update={
+                    "source_references": tuple(
+                        source_references[key] for key in sorted(source_references, key=str)
+                    ),
+                    "standard_references": tuple(
+                        standard_references[key] for key in sorted(standard_references, key=str)
+                    ),
                     "calculation_runs": (*current_model.calculation_runs, run),
                     "calculation_results": (
                         *current_model.calculation_results,
@@ -202,6 +230,7 @@ class ProjectRepository:
                     ),
                 }
             )
+            ModelValidator().validate(updated_model).raise_for_errors()
             record.schema_version = updated_model.schema_version
             record.model_json = serialize_model(updated_model)
             record.updated_at = datetime.now(UTC)

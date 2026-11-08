@@ -7,6 +7,7 @@ from mechprox.domain.base import (
     EngineeringProperty,
     IdentifiedModel,
     PropertyValue,
+    SourceReference,
     StandardReference,
 )
 from mechprox.domain.engineering import EngineeringObjectRecord
@@ -45,6 +46,7 @@ class CalculationRun(IdentifiedModel):
     input_snapshots: tuple[CalculationInputSnapshot, ...]
     standard_reference_ids: tuple[UUID, ...] = ()
     standard_snapshots: tuple[StandardReference, ...] = ()
+    source_reference_snapshots: tuple[SourceReference, ...] = ()
     input_hash: str = Field(min_length=1)
     output_hash: str | None = None
     warnings: tuple[str, ...] = ()

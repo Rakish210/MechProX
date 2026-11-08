@@ -4,9 +4,14 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
-from mechprox.data.models import ParameterDefinitionRecord, ParameterRevisionRecord
+from mechprox.data.models import (
+    ParameterDefinitionRecord,
+    ParameterRevisionRecord,
+    SourceReferenceRecord,
+    StandardReferenceRecord,
+)
 from mechprox.domain.base import Quantity, QuantityValue, ScalarValue
 from mechprox.domain.parameters import (
     ParameterDefinition,
@@ -50,6 +55,11 @@ class ParameterRegistryRepository:
         )
         try:
             with self._session_factory.begin() as session:
+                self._validate_references(
+                    session,
+                    definition.source_reference_ids,
+                    definition.standard_reference_ids,
+                )
                 session.add(record)
                 session.flush()
         except IntegrityError as exc:
@@ -70,6 +80,11 @@ class ParameterRegistryRepository:
                 definition_record.model_json
             )
             self._validate_value(definition, revision)
+            self._validate_references(
+                session,
+                revision.source_reference_ids,
+                revision.standard_reference_ids,
+            )
             record = ParameterRevisionRecord(
                 id=str(revision.id),
                 definition_id=str(revision.definition_id),
@@ -134,12 +149,26 @@ class ParameterRegistryRepository:
                 ParameterRevision.model_validate_json(record.model_json)
                 for record in records
             )
-        return resolve_parameter(
+        selected = resolve_parameter(
             definition,
             revisions,
             jurisdiction_code=jurisdiction_code,
             project_id=project_id,
             effective_date=effective_date,
+        )
+        return selected.model_copy(
+            update={
+                "source_reference_ids": tuple(
+                    dict.fromkeys(
+                        (*definition.source_reference_ids, *selected.source_reference_ids)
+                    )
+                ),
+                "standard_reference_ids": tuple(
+                    dict.fromkeys(
+                        (*definition.standard_reference_ids, *selected.standard_reference_ids)
+                    )
+                ),
+            }
         )
 
     def export_snapshot(self) -> ParameterRegistry:
@@ -156,6 +185,19 @@ class ParameterRegistryRepository:
                 for record in records
             )
         return ParameterRegistry(definitions=definitions, revisions=revisions)
+
+    @staticmethod
+    def _validate_references(
+        session: Session,
+        source_ids: tuple[UUID, ...],
+        standard_ids: tuple[UUID, ...],
+    ) -> None:
+        for source_id in source_ids:
+            if session.get(SourceReferenceRecord, str(source_id)) is None:
+                raise ValueError(f"Unknown source reference '{source_id}'.")
+        for standard_id in standard_ids:
+            if session.get(StandardReferenceRecord, str(standard_id)) is None:
+                raise ValueError(f"Unknown standard reference '{standard_id}'.")
 
     def _validate_definition(self, definition: ParameterDefinition) -> None:
         if definition.value_kind == ParameterValueKind.SCALAR:

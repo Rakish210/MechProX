@@ -12,8 +12,15 @@ from mechprox.data.parameter_registry_repository import (
     ParameterAlreadyExistsError,
     ParameterRegistryRepository,
 )
-from mechprox.domain.base import Quantity, QuantityValue, ScalarValue
-from mechprox.domain.enums import InformationOrigin
+from mechprox.data.source_registry_repository import SourceRegistryRepository
+from mechprox.domain.base import (
+    Quantity,
+    QuantityValue,
+    ScalarValue,
+    SourceReference,
+    StandardReference,
+)
+from mechprox.domain.enums import InformationOrigin, SourceKind
 from mechprox.domain.parameters import (
     ParameterDefinition,
     ParameterResolutionError,
@@ -234,3 +241,76 @@ def test_scalar_parameter_can_be_resolved(repository: ParameterRegistryRepositor
     assert resolved.id == revision.id
     assert isinstance(resolved.value, ScalarValue)
     assert resolved.value.value == Decimal("0.85")
+
+
+def test_parameter_definition_references_must_exist_in_source_registry(tmp_path) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'parameter-sources.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    repository = ParameterRegistryRepository(factory)
+    missing_source_id = uuid4()
+    definition = ParameterDefinition(
+        code="TEST.SOURCE_LINK",
+        name="Source-linked scalar",
+        discipline_code="GENERAL",
+        category_code="TEST",
+        value_kind=ParameterValueKind.SCALAR,
+        source_reference_ids=(missing_source_id,),
+    )
+
+    with pytest.raises(ValueError, match="Unknown source reference"):
+        repository.register_definition(definition)
+
+
+def test_parameter_resolution_inherits_definition_provenance(tmp_path) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'parameter-provenance.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    repository = ParameterRegistryRepository(factory)
+    source_repository = SourceRegistryRepository(factory)
+    source = SourceReference(
+        source_kind=SourceKind.STANDARD,
+        document_name="Engineering standard",
+        document_revision="2024",
+        uri="https://example.invalid/standard.pdf",
+        origin=InformationOrigin.USER_INPUT,
+    )
+    source_repository.register_source(source)
+    standard = StandardReference(
+        standard_code="EN 10000",
+        title="Test standard",
+        edition="2024",
+        clause="4.1",
+        source_reference_id=source.id,
+    )
+    source_repository.register_standard(standard)
+    definition = ParameterDefinition(
+        code="TEST.PROVENANCE",
+        name="Provenance test",
+        discipline_code="GENERAL",
+        category_code="TEST",
+        value_kind=ParameterValueKind.SCALAR,
+        source_reference_ids=(source.id,),
+        standard_reference_ids=(standard.id,),
+    )
+    repository.register_definition(definition)
+    revision = ParameterRevision(
+        definition_id=definition.id,
+        revision_code="A",
+        value=ScalarValue(value=Decimal("1.5")),
+        status=ParameterRevisionStatus.APPROVED,
+        origin=InformationOrigin.USER_INPUT,
+        created_by="test",
+        approved_by="test",
+    )
+    repository.add_revision(revision)
+
+    resolved = repository.resolve(
+        definition.code,
+        jurisdiction_code=None,
+        project_id=None,
+        effective_date=date(2026, 11, 8),
+    )
+
+    assert resolved.source_reference_ids == (source.id,)
+    assert resolved.standard_reference_ids == (standard.id,)

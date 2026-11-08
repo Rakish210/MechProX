@@ -8,6 +8,7 @@ from mechprox.domain.enums import InformationOrigin, RevisionState
 from mechprox.domain.model import EngineeringModel
 from mechprox.domain.project import Discipline
 from mechprox.domain.validation import ModelValidator
+from mechprox.domain.units import UnitService
 
 
 class EngineeringObjectInputError(ValueError):
@@ -26,7 +27,11 @@ def _merge_catalogue_records(model: EngineeringModel, product: ProductReference,
     positions = {item.id: item for item in model.positions}
     mappings = {item.id: item for item in model.position_product_mappings}
     if mapping is not None:
-        if position is None or mapping.product_reference_id != product.id:
+        if (
+            position is None
+            or mapping.product_reference_id != product.id
+            or mapping.position_reference_id != position.id
+        ):
             raise EngineeringObjectInputError("A mapping must reference the selected product and its position.")
         existing_position = positions.get(position.id)
         if existing_position is not None and existing_position != position:
@@ -70,8 +75,14 @@ def add_linear_element(
         raise EngineeringObjectInputError("Name, category, discipline, element type, unit and creator are required.")
     if not length_value.is_finite() or length_value <= 0:
         raise EngineeringObjectInputError("Linear-element length must be finite and greater than zero.")
-    if not product.unit_code:
-        raise EngineeringObjectInputError("The selected product has no unit.")
+    if not UnitService().are_compatible(length_unit.strip(), product.unit_code):
+        raise EngineeringObjectInputError(
+            f"Length unit '{length_unit}' is incompatible with product unit '{product.unit_code}'."
+        )
+    if mapping is not None and mapping.measurement_rule_code.upper() not in {
+        "LENGTH", "LINEAR_CENTERLINE_LENGTH"
+    }:
+        raise EngineeringObjectInputError("A linear element requires a length-based BOQ mapping.")
     object_id = uuid4()
     revision = Revision(
         object_id=object_id,
@@ -119,6 +130,8 @@ def add_equipment(
                   equipment_type.strip(), changed_by.strip())
     if not all(normalized):
         raise EngineeringObjectInputError("Name, category, discipline, equipment type and creator are required.")
+    if mapping is not None and mapping.measurement_rule_code.upper() != "COUNT":
+        raise EngineeringObjectInputError("Equipment requires a COUNT BOQ mapping.")
     object_id = uuid4()
     revision = Revision(
         object_id=object_id,

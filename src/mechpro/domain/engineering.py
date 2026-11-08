@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -61,6 +61,6 @@ class LinearElement(EngineeringObject):
 
 
 EngineeringObjectRecord = Annotated[
-    Union[EngineeringObject, Equipment, LinearElement],
+    EngineeringObject | Equipment | LinearElement,
     Field(discriminator="kind"),
 ]

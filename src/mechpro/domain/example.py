@@ -282,7 +282,7 @@ def create_natural_gas_reference_model() -> EngineeringModel:
         source_reference_ids=(source_ids[0],),
     )
 
-    total_pipe_length = sum(pipe_lengths, Decimal("0"))
+    total_pipe_length = sum(pipe_lengths, Decimal(0))
     bom = BOMDocument(
         project_id=project_id,
         title="Synthetic material takeoff",
@@ -375,7 +375,7 @@ def create_natural_gas_reference_model() -> EngineeringModel:
                 building_id=building_id,
                 level_code="L00",
                 name="Ground level",
-                elevation=Quantity(value=Decimal("0"), unit_code="meter"),
+                elevation=Quantity(value=Decimal(0), unit_code="meter"),
             ),
         ),
         spaces=(
@@ -384,14 +384,14 @@ def create_natural_gas_reference_model() -> EngineeringModel:
                 level_id=level_id,
                 space_code="S-001",
                 name="Utility room",
-                area=Quantity(value=Decimal("12"), unit_code="meter ** 2"),
+                area=Quantity(value=Decimal(12), unit_code="meter ** 2"),
             ),
             Space(
                 id=space_b_id,
                 level_id=level_id,
                 space_code="S-002",
                 name="Appliance room",
-                area=Quantity(value=Decimal("8"), unit_code="meter ** 2"),
+                area=Quantity(value=Decimal(8), unit_code="meter ** 2"),
             ),
         ),
         disciplines=(

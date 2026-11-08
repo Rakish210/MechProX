@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import TypeVar
 from uuid import UUID
 
-from mechpro.domain.base import Quantity, QuantityValue, ReferenceValue, Revision
+from mechpro.domain.base import IdentifiedModel, Quantity, QuantityValue, ReferenceValue, Revision
 from mechpro.domain.calculations import CalculationRun
 from mechpro.domain.commercial import PositionProductMapping, PositionReference, ProductReference
 from mechpro.domain.engineering import EngineeringObjectRecord
@@ -29,7 +29,7 @@ class ValidationContext:
     model: EngineeringModel
     units: UnitService
     issues: list[ValidationIssue] = field(default_factory=list)
-    entities: dict[UUID, object] = field(default_factory=dict)
+    entities: dict[UUID, IdentifiedModel] = field(default_factory=dict)
     object_by_id: dict[UUID, EngineeringObjectRecord] = field(default_factory=dict)
     network_by_id: dict[UUID, Network] = field(default_factory=dict)
     system_by_id: dict[UUID, EngineeringSystem] = field(default_factory=dict)
@@ -72,7 +72,7 @@ class ValidationContext:
         )
         for collection_index, collection in enumerate(collections):
             for item_index, entity in enumerate(collection):
-                entity_id = getattr(entity, "id")
+                entity_id = entity.id
                 if entity_id in self.entities:
                     previous = type(self.entities[entity_id]).__name__
                     self.add(
@@ -170,7 +170,7 @@ class ValidationContext:
             self.add("invalid_unit", str(exc), path)
 
     def validate_unit_code(self, unit_code: str, path: str) -> None:
-        self.validate_unit(Quantity(value=Decimal("1"), unit_code=unit_code), path)
+        self.validate_unit(Quantity(value=Decimal(1), unit_code=unit_code), path)
 
     def validate_object_sources(self, object_ids: tuple[UUID, ...], path: str) -> None:
         for object_id in object_ids:

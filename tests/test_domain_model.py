@@ -66,7 +66,7 @@ def test_incompatible_quantity_dimension_is_rejected() -> None:
 
     with pytest.raises(UnitValidationError):
         units.validate(
-            Quantity(value=Decimal("2"), unit_code="second"),
+            Quantity(value=Decimal(2), unit_code="second"),
             expected_dimension="[length]",
         )
 
@@ -74,13 +74,13 @@ def test_incompatible_quantity_dimension_is_rejected() -> None:
 def test_unknown_unit_is_rejected() -> None:
     with pytest.raises(UnitValidationError):
         UnitService().validate(
-            Quantity(value=Decimal("1"), unit_code="unknown_engineering_unit")
+            Quantity(value=Decimal(1), unit_code="unknown_engineering_unit")
         )
 
 
 def test_domain_contract_rejects_unstructured_unknown_fields() -> None:
     with pytest.raises(ValidationError):
-        Quantity(value=Decimal("2"), unit_code="meter", arbitrary_engineering_data={})
+        Quantity(value=Decimal(2), unit_code="meter", arbitrary_engineering_data={})
 
 
 def test_bom_and_boq_are_distinct_domain_records() -> None:

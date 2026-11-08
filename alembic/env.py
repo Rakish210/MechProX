@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import URL, make_url
 
+from alembic import context
 from mechpro.data import models  # noqa: F401
 from mechpro.data.db import Base
 

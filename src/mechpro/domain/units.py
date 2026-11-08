@@ -59,7 +59,7 @@ class UnitService:
 
     def are_compatible(self, first_unit: str, second_unit: str) -> bool:
         try:
-            self._registry.Quantity(Decimal("1"), first_unit).to(second_unit)
+            self._registry.Quantity(Decimal(1), first_unit).to(second_unit)
         except (pint.errors.UndefinedUnitError, pint.errors.DimensionalityError):
             return False
         return True

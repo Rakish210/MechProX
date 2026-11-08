@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -73,7 +73,7 @@ class ReferenceValue(DomainModel):
 
 
 PropertyValue = Annotated[
-    Union[ScalarValue, QuantityValue, ReferenceValue],
+    ScalarValue | QuantityValue | ReferenceValue,
     Field(discriminator="kind"),
 ]
 
@@ -147,7 +147,7 @@ class StandardReference(IdentifiedModel):
     source_reference_id: UUID | None = None
 
     @model_validator(mode="after")
-    def effective_dates_must_be_ordered(self) -> "StandardReference":
+    def effective_dates_must_be_ordered(self) -> StandardReference:
         if (
             self.effective_from is not None
             and self.effective_to is not None

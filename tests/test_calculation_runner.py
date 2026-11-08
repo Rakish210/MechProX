@@ -149,12 +149,34 @@ def test_runner_creates_reproducible_run_and_persists_results(model_and_runner) 
     assert execution.run.input_hash
     assert execution.run.output_hash
     assert len(execution.run.input_snapshots) == 3
+    assert all(item.object_snapshot is not None for item in execution.run.input_snapshots)
+    assert all(
+        parameter.revision_snapshot is not None
+        for item in execution.run.input_snapshots
+        for parameter in item.parameter_snapshots
+    )
     assert len(execution.results) == 1
     assert isinstance(execution.results[0].value, QuantityValue)
     assert execution.results[0].value.quantity.value == Decimal("26.0")
     assert restored.calculation_runs[-1] == execution.run
     assert restored.calculation_results[-1] == execution.results[0]
     assert ModelValidator().validate(restored).is_valid
+
+    original_pipe = next(
+        item for item in restored.objects if isinstance(item, LinearElement)
+    )
+    revised_pipe = original_pipe.model_copy(
+        update={"length": Quantity(value=Decimal(99), unit_code="meter")}
+    )
+    revised_objects = tuple(
+        revised_pipe if item.id == original_pipe.id else item
+        for item in restored.objects
+    )
+    project_repository.save(restored.model_copy(update={"objects": revised_objects}))
+    historical = project_repository.get(model.project.id).calculation_runs[-1]
+    historical_pipe = historical.input_snapshots[0].object_snapshot
+    assert isinstance(historical_pipe, LinearElement)
+    assert historical_pipe.length.value == Decimal("6.0")
 
 
 def test_runner_records_engine_failure(model_and_runner) -> None:

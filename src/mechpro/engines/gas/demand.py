@@ -22,13 +22,15 @@ class GasApplianceDemandEngine(CalculationEngine):
     method_revision = "1.0.0"
     engine_name = "MechPro Gas Appliance Demand"
     engine_version = "1.0.0"
-    required_parameter_codes = ("GAS.LOWER_HEATING_VALUE",)
-
     POWER_PROPERTY_KEY = "thermal_input_power"
     LOWER_HEATING_VALUE_PARAMETER = "GAS.LOWER_HEATING_VALUE"
     POWER_UNIT = "kilowatt"
     HEATING_VALUE_UNIT = "kilowatt_hour / meter ** 3"
     FLOW_UNIT = "meter ** 3 / hour"
+
+    @property
+    def required_parameter_codes(self) -> tuple[str, ...]:
+        return (self.LOWER_HEATING_VALUE_PARAMETER,)
 
     def __init__(self, unit_service: UnitService | None = None) -> None:
         self._units = unit_service or UnitService()

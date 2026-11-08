@@ -277,3 +277,22 @@ def test_identical_inputs_produce_identical_hashes(model_and_runner) -> None:
 
     assert first.run.input_hash == second.run.input_hash
     assert first.run.output_hash == second.run.output_hash
+
+
+def test_run_and_save_preserves_project_edits_made_after_calculation_input_was_loaded(
+    model_and_runner,
+) -> None:
+    model, project_repository, runner = model_and_runner
+    latest_project = model.project.model_copy(
+        update={"description": "Edited while calculation was being prepared."}
+    )
+    latest_model = model.model_copy(update={"project": latest_project})
+    project_repository.save(latest_model)
+
+    execution = runner.run_and_save(model, _request(model), project_repository)
+    restored = project_repository.get(model.project.id)
+
+    assert execution.run.state == CalculationState.COMPLETED
+    assert restored.project.description == "Edited while calculation was being prepared."
+    assert restored.calculation_runs[-1].id == execution.run.id
+    assert restored.calculation_results[-1].calculation_run_id == execution.run.id

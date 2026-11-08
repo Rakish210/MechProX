@@ -219,7 +219,7 @@ class NewParameterRevisionDialog(QDialog):
 
         scope_key = self.scope_key.text().strip() if scope != ParameterScopeKind.GLOBAL else ""
         if scope == ParameterScopeKind.PROJECT:
-            UUID(scope_key)
+            scope_key = str(UUID(scope_key))
 
         return ParameterRevision(
             definition_id=self.definition.id,
@@ -289,7 +289,7 @@ class ParameterRegistryPage(QWidget):
         layout.addWidget(history_title)
         self.revision_table = QTableWidget(0, 6)
         self.revision_table.setHorizontalHeaderLabels(
-            ["Revizyon", "Kapsam", "Durum", "Değer", "Geçerli olduğu tarih", "Kaynak"]
+            ["Revizyon", "Kapsam", "Durum", "Değer", "Geçerlilik", "Bilgi kökeni"]
         )
         self._configure_table(self.revision_table)
         layout.addWidget(self.revision_table, 2)

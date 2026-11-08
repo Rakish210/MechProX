@@ -60,7 +60,7 @@ class GasDemandPage(QWidget):
 
         project_form = QFormLayout()
         self.project_combo = QComboBox()
-        self.project_combo.currentIndexChanged.connect(self._load_selected_project)
+        self.project_combo.currentIndexChanged.connect(self._project_changed)
         project_form.addRow("Proje", self.project_combo)
         layout.addLayout(project_form)
 
@@ -129,6 +129,7 @@ class GasDemandPage(QWidget):
         table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
     def refresh(self) -> None:
+        self.result_table.setRowCount(0)
         previous_id = self.project_combo.currentData()
         self.project_combo.blockSignals(True)
         self.project_combo.clear()
@@ -142,6 +143,10 @@ class GasDemandPage(QWidget):
             if index >= 0:
                 self.project_combo.setCurrentIndex(index)
         self.project_combo.blockSignals(False)
+        self._load_selected_project()
+
+    def _project_changed(self, *_args) -> None:
+        self.result_table.setRowCount(0)
         self._load_selected_project()
 
     def _selected_project_id(self) -> UUID | None:
@@ -175,6 +180,7 @@ class GasDemandPage(QWidget):
             return
 
         appliances = self._gas_appliances(model)
+        revision_by_id = {item.id: item for item in model.revisions}
         self.appliance_table.setRowCount(len(appliances))
         for row, appliance in enumerate(appliances):
             power = next(
@@ -189,7 +195,11 @@ class GasDemandPage(QWidget):
             values = (
                 appliance.name,
                 f"{power.value} {power.unit_code}" if power else "Eksik",
-                str(appliance.revision_id or "—"),
+                (
+                    revision_by_id[appliance.revision_id].revision_code
+                    if appliance.revision_id in revision_by_id
+                    else "—"
+                ),
             )
             for column, value in enumerate(values):
                 self.appliance_table.setItem(row, column, QTableWidgetItem(value))

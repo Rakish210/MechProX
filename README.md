@@ -1,8 +1,8 @@
-# MechPro
+# MechProX
 
 **Uzman Mekanik Tesisat Mühendisliği Platformu**
 
-MechPro is a Python-first desktop engineering platform. It coordinates a shared, traceable project model, deterministic engineering calculations, product and position libraries, CAD/BIM adapters, BOM/BOQ workflows and technical reporting. AI may orchestrate tools; engineering results must come from versioned deterministic methods.
+MechProX is a Python-first desktop engineering platform. It coordinates one traceable engineering model across deterministic calculations, product and position libraries, CAD/BIM adapters, BOM/BOQ, cost management and technical reporting. AI may interpret, review and orchestrate work; engineering quantities and calculation results must come from traceable model data and validated deterministic methods.
 
 ## Current implementation
 
@@ -18,7 +18,7 @@ MechPro is a Python-first desktop engineering platform. It coordinates a shared,
 - Source provenance, revisions, calculation snapshots and distinct BOM/BOQ contracts.
 - Ruff, Pyright, Pytest and Alembic migration workflow.
 
-The current desktop vertical slice supports project creation and local persistence. Parameter Registry persistence, deterministic value resolution and basic registry management are implemented. The first gas appliance demand method is available in the desktop calculation page. The LHV must be entered and approved in Parameter Registry before calculation. Gas pipe sizing and pressure-loss calculations, engineering editors, live product/poz catalogues, production BOM/BOQ generation and CAD/BIM operations are not yet implemented.
+The current desktop vertical slice supports project creation and local persistence, parameter management and the first gas appliance demand method. The lower heating value must be entered and approved in Parameter Registry before calculation. Gas pipe-network sizing and pressure-loss calculations, live product/poz catalogues, production BOM/BOQ and cost workflows, engineering editors and CAD/BIM operations remain under development.
 
 ## Technology baseline
 
@@ -35,7 +35,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 alembic upgrade head
-mechpro
+mechprox
 ```
 
 Validation:
@@ -47,7 +47,11 @@ pytest -q
 alembic upgrade head
 ```
 
-By default, local data is stored outside the repository in `%USERPROFILE%\.mechpro`. Set `MECHPRO_DATA_DIR` or `MECHPRO_DATABASE_URL` to override the location.
+By default, new installations store local data outside the repository in `%USERPROFILE%\.mechprox`. Set `MECHPROX_DATA_DIR` or `MECHPROX_DATABASE_URL` to override the location. For continuity, an existing `.mechpro` folder and the former `MECHPRO_*` environment variables are detected as legacy fallbacks; existing project data is not deleted.
+
+## Product direction
+
+See [Product Direction and Reference Analysis](docs/product/PRODUCT_DIRECTION.md) for the capabilities we intend to develop from the supplied MTYCAD, Tesisat.org, OSKA and Aginera references. Those sites are inspiration for workflows, not implementation specifications.
 
 ## Architecture
 
@@ -57,5 +61,6 @@ By default, local data is stored outside the repository in `%USERPROFILE%\.mechp
 - `src/mechpro/modules`: bounded application modules.
 - `src/mechpro/ui`: PySide6 desktop control center.
 - `docs/architecture`: architecture decisions and domain documentation.
+- `docs/product`: product direction, scope and feature priorities.
 
-The domain layer remains independent of UI, persistence and CAD/BIM vendors. AutoCAD and Revit remain external desktop applications accessed through bridge adapters. The previously working AutoCAD bridge is to be reused, not recreated as a proof of concept.
+The internal Python import namespace remains `mechpro` for source compatibility. The distributed desktop product, installer identity and user-facing application name are MechProX. AutoCAD and Revit remain external desktop applications accessed through bridge adapters. The previously working AutoCAD bridge is to be reused, not recreated as a proof of concept.

@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
             try:
                 refresh()
                 self.status_label.setText("Yerel veritabanı")
-            except Exception as exc:  # noqa: BLE001 - isolate page refresh failures
+            except Exception as exc:
                 self.context.logger.exception(
                     "Module page '%s' failed to refresh",
                     self._page_specs[index].key,

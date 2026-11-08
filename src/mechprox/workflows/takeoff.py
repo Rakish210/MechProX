@@ -10,7 +10,6 @@ from mechprox.domain.commercial import (
     BOQItem,
     PositionProductMapping,
     PositionReference,
-    ProductReference,
 )
 from mechprox.domain.engineering import EngineeringObjectRecord, Equipment, LinearElement
 from mechprox.domain.model import EngineeringModel

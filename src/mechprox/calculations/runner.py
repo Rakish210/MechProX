@@ -364,6 +364,7 @@ class CalculationRunner:
             input_objects=tuple(selected_objects),
             parameters=parameters,
             standard_references=standards,
+            source_references=source_snapshots,
         )
         return context, tuple(snapshots), tuple(used_standard_ids), source_snapshots
 

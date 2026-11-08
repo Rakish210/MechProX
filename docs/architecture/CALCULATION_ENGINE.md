@@ -36,7 +36,7 @@ Each calculation input snapshot retains:
 - Source reference IDs.
 - A SHA-256 snapshot hash.
 
-The calculation run retains full standard reference snapshots, method code/revision, engine name/version, effective date and jurisdiction through its request hash, and a hash of the calculation inputs. Output hashes are computed from result values and provenance, excluding generated result IDs and timestamps so identical inputs and outputs produce identical hashes.
+The calculation run retains full standard reference snapshots, method code/revision, engine name/version, effective date and jurisdiction in the calculation input hash. Output hashes are computed from result values and provenance, excluding generated result IDs and timestamps so identical inputs and outputs produce identical hashes.
 
 Engineering-purpose runs without full object and parameter revision snapshots are invalid. The synthetic reference model's demonstration run is explicitly marked as demonstration data and is not treated as an engineering result.
 

@@ -151,7 +151,7 @@ def test_parameter_value_dimension_is_enforced(
     invalid = _revision(definition, Decimal("10.0")).model_copy(
         update={
             "value": QuantityValue(
-                quantity=Quantity(value=Decimal("10"), unit_code="meter")
+                quantity=Quantity(value=Decimal(10), unit_code="meter")
             )
         }
     )

@@ -54,7 +54,7 @@ class ModuleManifest:
     capabilities: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        if not _MODULE_ID_PATTERN.fullmatch(self.module_id.strip()):
+        if self.module_id != self.module_id.strip() or not _MODULE_ID_PATTERN.fullmatch(self.module_id):
             raise ModuleRegistrationError(
                 "Module IDs must start with a lowercase letter and contain only "
                 "lowercase letters, digits, dots, underscores or hyphens."
@@ -89,7 +89,7 @@ class ModulePageSpec:
     order: int = 100
 
     def __post_init__(self) -> None:
-        if not _PAGE_ID_PATTERN.fullmatch(self.page_id.strip()):
+        if self.page_id != self.page_id.strip() or not _PAGE_ID_PATTERN.fullmatch(self.page_id):
             raise ModuleRegistrationError(
                 "Page IDs must start with a lowercase letter and contain only "
                 "lowercase letters, digits, hyphens or underscores."
@@ -304,13 +304,15 @@ class ModuleHost:
             self._context.services.freeze()
 
             for spec, instance in self._instances:
+                # Register before calling start so rollback also stops a module
+                # whose startup failed after acquiring only some resources.
+                self._started.append((spec, instance))
                 try:
                     instance.start(self._context)
                 except Exception as exc:  # noqa: BLE001 - retain module identity
                     raise ModuleStartupError(
                         f"Module '{spec.manifest.module_id}' startup failed: {exc}"
                     ) from exc
-                self._started.append((spec, instance))
         except Exception:
             self._rollback_startup()
             raise

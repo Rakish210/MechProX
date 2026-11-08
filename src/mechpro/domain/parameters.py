@@ -85,7 +85,7 @@ class ParameterRevision(IdentifiedModel):
         ):
             raise ValueError("Approved parameter revisions require an approver.")
         if not isinstance(self.value, (QuantityValue, ScalarValue)):
-            raise ValueError("Parameter values must be scalar or unit-bearing quantities.")
+            raise TypeError("Parameter values must be scalar or unit-bearing quantities.")
         return self
 
 

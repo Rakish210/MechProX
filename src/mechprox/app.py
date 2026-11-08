@@ -94,7 +94,7 @@ def main() -> int:
     module_registry = ModuleRegistry()
     for module_spec in create_builtin_module_specs():
         module_registry.register(module_spec)
-    module_registry.discover_entry_points(config.get("enabled_module_packages", ()))
+    module_registry.discover_entry_points()
     module_host = ModuleHost(module_registry, context)
     module_host.start()
 

@@ -113,6 +113,7 @@ class ModuleEntryPoint(Protocol):
 
     def load(self) -> Callable[[], ModuleSpec]:
         """Load the module specification provider from an installed distribution."""
+        ...
 
 
 class PlatformModule(Protocol):

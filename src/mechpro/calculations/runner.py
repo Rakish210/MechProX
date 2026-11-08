@@ -64,7 +64,12 @@ class CalculationRunner:
                 "jurisdiction_code": request.jurisdiction_code,
                 "purpose": request.purpose.value,
                 "input_snapshots": [
-                    snapshot.model_dump(mode="json") for snapshot in input_snapshots
+                    {
+                        "engineering_object_id": str(snapshot.engineering_object_id),
+                        "object_revision_id": str(snapshot.object_revision_id),
+                        "snapshot_hash": snapshot.snapshot_hash,
+                    }
+                    for snapshot in input_snapshots
                 ],
                 "standard_reference_ids": [str(item) for item in standard_ids],
             }
@@ -292,7 +297,7 @@ class CalculationRunner:
                     prop.model_dump(mode="json") for prop in item.properties
                 ],
                 "parameters": [
-                    snapshot.model_dump(mode="json")
+                    snapshot.model_dump(mode="json", exclude={"id"})
                     for snapshot in parameter_snapshots
                 ],
                 "source_reference_ids": [

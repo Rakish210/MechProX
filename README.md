@@ -16,9 +16,13 @@ MechProX is a Python-first desktop engineering platform. It coordinates one trac
 - Deterministic calculation execution framework with engine registry, declared input context, immutable object/parameter/standard snapshots, reproducible hashes and persisted run outcomes.
 - First desktop engineering workflow: add revision-controlled gas appliances and calculate reference volumetric demand using an approved, user-supplied LHV parameter.
 - Source provenance, revisions, calculation snapshots and distinct BOM/BOQ contracts.
+- Persistent product and BOQ-position catalogues, including versioned many-to-many product/position mappings.
+- Engineering Data UI for registering linear elements and equipment with explicit product and optional BOQ mapping assignments.
+- Deterministic BOM/BOQ takeoff from project objects: length-based rules (`LENGTH`, `LINEAR_CENTERLINE_LENGTH`) and equipment count (`COUNT`), with unit conversion and source-object traceability.
+- Atomic takeoff persistence with stale-project protection and BOQ cost totals grouped by currency.
 - Ruff, Pyright, Pytest and Alembic migration workflow.
 
-The current desktop vertical slice supports project creation and local persistence, parameter management and the first gas appliance demand method. The lower heating value must be entered and approved in Parameter Registry before calculation. Gas pipe-network sizing and pressure-loss calculations, live product/poz catalogues, production BOM/BOQ and cost workflows, engineering editors and CAD/BIM operations remain under development.
+The current desktop vertical slice supports project creation and local persistence, parameter management, the first gas appliance demand method, product/poz catalogue management, project engineering-object entry, and BOM/BOQ generation for explicitly assigned products and supported measurement rules. The lower heating value must be entered and approved in Parameter Registry before gas demand calculation. Area-, volume- and weight-based takeoff rules, source-document/standard library workflows, advanced BOQ pricing and export, gas pipe-network sizing and pressure-loss calculations, and CAD/BIM operations remain under development.
 
 ## Technology baseline
 

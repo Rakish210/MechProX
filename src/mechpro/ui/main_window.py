@@ -9,9 +9,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from mechpro.calculations.runner import CalculationRunner
 from mechpro.core.context import AppContext
 from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
+from mechpro.ui.gas_demand_page import GasDemandPage
 from mechpro.ui.parameter_registry_page import ParameterRegistryPage
 from mechpro.ui.project_page import ComingSoonPage, DashboardPage, ProjectPage
 
@@ -35,6 +37,7 @@ class MainWindow(QMainWindow):
         context: AppContext,
         repository: ProjectRepository,
         parameter_repository: ParameterRegistryRepository,
+        calculation_runner: CalculationRunner,
     ) -> None:
         super().__init__()
         self.context = context
@@ -93,6 +96,7 @@ class MainWindow(QMainWindow):
         self.dashboard = DashboardPage(repository)
         self.projects = ProjectPage(repository)
         self.parameters = ParameterRegistryPage(parameter_repository)
+        self.calculations = GasDemandPage(repository, calculation_runner)
         pages = (
             self.dashboard,
             self.projects,
@@ -100,10 +104,7 @@ class MainWindow(QMainWindow):
                 "Mühendislik Verisi",
                 "Ortak mühendislik veri modeli hazır. Nesne ve sistem düzenleyicisi sonraki geliştirme adımında eklenecek.",
             ),
-            ComingSoonPage(
-                "Hesaplamalar",
-                "Deterministik hesap motorları ve sürümlü tasarım parametreleri burada yönetilecek.",
-            ),
+            self.calculations,
             self.parameters,
             ComingSoonPage(
                 "Ürün ve Poz Kütüphanesi",
@@ -139,7 +140,9 @@ class MainWindow(QMainWindow):
         self.section_title.setText(self.NAVIGATION[index][0])
         self.dashboard.refresh()
         self.projects.refresh()
-        if index == 4:
+        if index == 3:
+            self.calculations.refresh()
+        elif index == 4:
             self.parameters.refresh()
 
     @staticmethod

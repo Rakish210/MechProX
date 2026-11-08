@@ -1,0 +1,70 @@
+name: One-time package namespace migration
+
+on:
+  push:
+    branches:
+      - refactor/rename-python-package-mechprox
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Rename package and references
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import shutil
+
+          old = Path("src/mechpro")
+          new = Path("src/mechprox")
+          if old.exists():
+              if new.exists():
+                  raise SystemExit("Both old and new package directories exist; refusing to overwrite.")
+              shutil.move(str(old), str(new))
+
+          pattern = re.compile(r"\\bmechpro\\b", re.IGNORECASE)
+          changed = []
+          for path in Path(".").rglob("*"):
+              if not path.is_file() or ".git" in path.parts or path.name == "logo.jpg":
+                  continue
+              try:
+                  original = path.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              updated = pattern.sub("mechprox", original)
+              if updated != original:
+                  path.write_text(updated, encoding="utf-8", newline="")
+                  changed.append(str(path))
+          print("Updated text files:", *changed, sep="\\n")
+          PY
+          git rm .github/workflows/rename-package.yml
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          ruff check .
+          pyright
+          pytest -q
+          alembic upgrade head
+          if git grep -n -i -E 'mechpro([^x[:alnum:]_]|$)' -- ':!logo.jpg'; then
+            echo "Legacy package namespace remains in tracked text."
+            exit 1
+          fi
+          test ! -e src/mechpro
+          test -e src/mechprox/__init__.py
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor: rename Python package namespace to mechprox"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

@@ -12,7 +12,8 @@ from mechprox.calculations.contracts import (
 from mechprox.calculations.registry import CalculationEngineRegistry
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
-from mechprox.domain.base import StandardReference
+from mechprox.data.source_registry_repository import SourceRegistryRepository
+from mechprox.domain.base import SourceReference, StandardReference
 from mechprox.domain.calculations import (
     CalculationInputSnapshot,
     CalculationResult,
@@ -40,9 +41,11 @@ class CalculationRunner:
         self,
         registry: CalculationEngineRegistry,
         parameter_repository: ParameterRegistryRepository,
+        source_repository: SourceRegistryRepository | None = None,
     ) -> None:
         self._registry = registry
         self._parameters = parameter_repository
+        self._sources = source_repository
 
     def run(
         self,
@@ -50,7 +53,7 @@ class CalculationRunner:
         request: CalculationRequest,
     ) -> CalculationExecution:
         engine = self._registry.get(request.method_code, request.method_revision)
-        context, input_snapshots, standard_ids = self._prepare_context(
+        context, input_snapshots, standard_ids, source_snapshots = self._prepare_context(
             model, request, engine.required_parameter_codes
         )
         input_hash = self._digest(
@@ -73,8 +76,10 @@ class CalculationRunner:
                 ],
                 "standard_reference_ids": [str(item) for item in standard_ids],
                 "standard_snapshots": [
-                    item.model_dump(mode="json")
-                    for item in context.standard_references
+                    item.model_dump(mode="json") for item in context.standard_references
+                ],
+                "source_snapshots": [
+                    item.model_dump(mode="json") for item in source_snapshots
                 ],
             }
         )
@@ -91,6 +96,7 @@ class CalculationRunner:
             input_snapshots=input_snapshots,
             standard_reference_ids=standard_ids,
             standard_snapshots=context.standard_references,
+            source_reference_snapshots=source_snapshots,
             input_hash=input_hash,
         )
 
@@ -179,6 +185,7 @@ class CalculationRunner:
         CalculationContext,
         tuple[CalculationInputSnapshot, ...],
         tuple[UUID, ...],
+        tuple[SourceReference, ...],
     ]:
         if request.project_id != model.project.id:
             raise CalculationPreconditionError(
@@ -203,9 +210,7 @@ class CalculationRunner:
 
         object_by_id = {item.id: item for item in model.objects}
         revision_by_id = {item.id: item for item in model.revisions}
-        standard_by_id = {item.id: item for item in model.standard_references}
         selected_objects: list[EngineeringObjectRecord] = []
-
         for object_id in request.input_object_ids:
             item = object_by_id.get(object_id)
             if item is None:
@@ -242,11 +247,32 @@ class CalculationRunner:
             for standard_id in revision.standard_reference_ids:
                 if standard_id not in used_standard_ids:
                     used_standard_ids.append(standard_id)
-        for standard_id in used_standard_ids:
-            if standard_id not in standard_by_id:
-                raise CalculationPreconditionError(
-                    f"Calculation standard reference '{standard_id}' is not in the project model."
-                )
+        for item in selected_objects:
+            for prop in item.properties:
+                standard_id = prop.standard_reference_id
+                if standard_id is not None and standard_id not in used_standard_ids:
+                    used_standard_ids.append(standard_id)
+
+        standard_by_id = {item.id: item for item in model.standard_references}
+        missing_standard_ids = [
+            item for item in used_standard_ids if item not in standard_by_id
+        ]
+        if missing_standard_ids and self._sources is not None:
+            for standard_id in missing_standard_ids:
+                try:
+                    standard_by_id[standard_id] = self._sources.get_standard(standard_id)
+                except LookupError as exc:
+                    raise CalculationPreconditionError(
+                        f"Calculation standard reference '{standard_id}' is not registered."
+                    ) from exc
+        missing_standard_ids = [
+            item for item in used_standard_ids if item not in standard_by_id
+        ]
+        if missing_standard_ids:
+            raise CalculationPreconditionError(
+                "Calculation standard references are not in the project or global registry: "
+                + ", ".join(sorted(str(item) for item in missing_standard_ids))
+            )
 
         source_ids: set[UUID] = set()
         for item in selected_objects:
@@ -255,12 +281,26 @@ class CalculationRunner:
                 source_ids.update(prop.source_reference_ids)
         for revision in parameters.values():
             source_ids.update(revision.source_reference_ids)
-        known_source_ids = {item.id for item in model.source_references}
-        missing_sources = source_ids - known_source_ids
-        if missing_sources:
+        for standard_id in used_standard_ids:
+            source_id = standard_by_id[standard_id].source_reference_id
+            if source_id is not None:
+                source_ids.add(source_id)
+
+        source_by_id = {item.id: item for item in model.source_references}
+        missing_source_ids = source_ids - set(source_by_id)
+        if missing_source_ids and self._sources is not None:
+            for source_id in sorted(missing_source_ids, key=str):
+                try:
+                    source_by_id[source_id] = self._sources.get_source(source_id)
+                except LookupError as exc:
+                    raise CalculationPreconditionError(
+                        f"Calculation source reference '{source_id}' is not registered."
+                    ) from exc
+        missing_source_ids = source_ids - set(source_by_id)
+        if missing_source_ids:
             raise CalculationPreconditionError(
-                "Calculation input references source records not present in the project model: "
-                + ", ".join(sorted(str(item) for item in missing_sources))
+                "Calculation source references are not in the project or global registry: "
+                + ", ".join(sorted(str(item) for item in missing_source_ids))
             )
 
         parameter_snapshots = tuple(
@@ -274,13 +314,14 @@ class CalculationRunner:
             for code, revision in parameters.items()
         )
         snapshots: list[CalculationInputSnapshot] = []
+        all_source_ids = tuple(sorted(source_ids, key=str))
         for item in selected_objects:
             object_revision_id = item.revision_id
             if object_revision_id is None:
                 raise CalculationPreconditionError(
                     f"Calculation input object '{item.id}' has no controlled revision."
                 )
-            item_source_ids: set[UUID] = set(item.source_reference_ids)
+            item_source_ids = set(item.source_reference_ids)
             for prop in item.properties:
                 item_source_ids.update(prop.source_reference_ids)
             item_source_ids.update(
@@ -315,9 +356,8 @@ class CalculationRunner:
                 )
             )
 
-        standards: tuple[StandardReference, ...] = tuple(
-            standard_by_id[item] for item in used_standard_ids
-        )
+        standards = tuple(standard_by_id[item] for item in used_standard_ids)
+        source_snapshots = tuple(source_by_id[item] for item in all_source_ids)
         context = CalculationContext(
             project=model.project,
             request=request,
@@ -325,7 +365,7 @@ class CalculationRunner:
             parameters=parameters,
             standard_references=standards,
         )
-        return context, tuple(snapshots), tuple(used_standard_ids)
+        return context, tuple(snapshots), tuple(used_standard_ids), source_snapshots
 
     @staticmethod
     def _validate_output(

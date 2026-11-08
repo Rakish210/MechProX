@@ -1,23 +1,22 @@
 # Initial Roadmap
 
-This roadmap is dependency-oriented. Individual phases can overlap only when their contracts are stable and doing so does not create cross-module coupling.
-
 ## Phase 0 — Architecture discovery
 - Repository audit, architecture baseline and initial ADRs.
 - Status: completed.
 
 ## Phase 1 — Core application foundation
 - Python/PySide6 desktop shell.
-- Basic module registry, configuration, logging, SQLite/SQLAlchemy/Alembic foundation.
+- Basic module registry, configuration, logging and SQLite/SQLAlchemy/Alembic foundation.
 - CI, linting, type checking and initial tests.
-- Status: initial foundation pushed; follow-up hygiene and platform coverage are being addressed.
+- Status: initial foundation pushed; repository hygiene and Qt startup coverage added on the maintenance branch.
 
 ## Phase 2 — Common Engineering Data Model
 - Typed, versioned domain contracts.
 - Project/building/level/space hierarchy.
-- Disciplines, systems, networks, nodes, components and connections.
+- Disciplines, systems, networks, connectors, components and connections.
 - Explicit source traceability, provenance, revisions and calculation snapshots.
 - Separate product/procurement and BOQ position concepts.
+- Status: first implementation in progress on `phase-2/engineering-data-model`.
 
 ## Phase 3 — Engineering knowledge and libraries
 - Parameter Registry and unit-aware values.

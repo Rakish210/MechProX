@@ -23,13 +23,13 @@ from mechpro.domain.enums import (
     RevisionState,
 )
 from mechpro.domain.example import create_natural_gas_reference_model
-from mechpro.domain.validation import ModelValidator
 from mechpro.domain.parameters import (
     ParameterDefinition,
     ParameterRevision,
     ParameterRevisionStatus,
     ParameterValueKind,
 )
+from mechpro.domain.validation import ModelValidator
 from mechpro.engines.gas.demand import GasApplianceDemandEngine
 from mechpro.engines.gas.workflow import GasApplianceInputError, add_gas_appliance
 

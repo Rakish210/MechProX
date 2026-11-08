@@ -63,7 +63,10 @@ class CalculationEngine(Protocol):
     method_revision: str
     engine_name: str
     engine_version: str
-    required_parameter_codes: tuple[str, ...]
+    @property
+    def required_parameter_codes(self) -> tuple[str, ...]:
+        ...
 
     def calculate(self, context: CalculationContext) -> CalculationOutput:
         """Execute a deterministic calculation using only supplied inputs."""
+        ...

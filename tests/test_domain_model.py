@@ -90,3 +90,30 @@ def test_bom_and_boq_are_distinct_domain_records() -> None:
     assert len(model.boq_documents) == 1
     assert model.bom_documents[0].items[0].product_reference_id != model.boq_documents[0].items[0].position_reference_id
     assert model.boq_documents[0].items[0].mapping_id == model.position_product_mappings[0].id
+
+
+def test_boq_unit_must_match_position_dimension() -> None:
+    model = create_natural_gas_reference_model()
+    original_document = model.boq_documents[0]
+    original_item = original_document.items[0]
+    invalid_item = original_item.model_copy(
+        update={"quantity": Quantity(value=Decimal("13"), unit_code="second")}
+    )
+    invalid_document = original_document.model_copy(update={"items": (invalid_item,)})
+    invalid_model = model.model_copy(update={"boq_documents": (invalid_document,)})
+
+    report = ModelValidator().validate(invalid_model)
+
+    assert any(issue.code == "boq_unit_mismatch" for issue in report.issues)
+
+
+def test_calculation_result_must_reference_captured_input_objects() -> None:
+    model = create_natural_gas_reference_model()
+    result = model.calculation_results[0].model_copy(
+        update={"source_object_ids": (model.objects[-1].id,)}
+    )
+    invalid_model = model.model_copy(update={"calculation_results": (result,)})
+
+    report = ModelValidator().validate(invalid_model)
+
+    assert any(issue.code == "result_source_not_captured" for issue in report.issues)

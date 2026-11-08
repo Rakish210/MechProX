@@ -38,7 +38,9 @@ from mechpro.domain.enums import (
     ConnectionKind,
     ConnectorDirection,
     ConnectorDomain,
+    GeometryFormat,
     InformationOrigin,
+    RevisionState,
     SourceKind,
 )
 from mechpro.domain.model import EngineeringModel
@@ -117,7 +119,7 @@ def create_natural_gas_reference_model() -> EngineeringModel:
             id=revision_ids[index],
             object_id=object_id,
             revision_code="A",
-            state="draft",
+            state=RevisionState.DRAFT,
             changed_by="synthetic-example",
             change_summary="Initial reference model record.",
         )
@@ -408,7 +410,7 @@ def create_natural_gas_reference_model() -> EngineeringModel:
         source_references=tuple(
             SourceReference(
                 id=source_ids[index],
-                source_kind=SourceKind.DWG.value if index else SourceKind.MANUAL.value,
+                source_kind=SourceKind.DWG if index else SourceKind.MANUAL,
                 uri="project://synthetic/drawings/gas-layout.dwg",
                 document_name="gas-layout.dwg",
                 document_revision="demo-1",
@@ -425,7 +427,7 @@ def create_natural_gas_reference_model() -> EngineeringModel:
         geometry_references=tuple(
             GeometryReference(
                 id=geometry_ids[index],
-                format="dwg",
+                format=GeometryFormat.DWG,
                 file_uri="project://synthetic/drawings/gas-layout.dwg",
                 geometry_type="line",
                 external_entity_id=f"DEMO{index + 1:03d}",

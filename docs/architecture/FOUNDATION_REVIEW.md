@@ -17,8 +17,8 @@ Date: 2026-11-08
 | Module architecture | In-memory registry with manual sample registration | Define stable typed module contracts before implementing plugin discovery |
 | Configuration | JSON file manager with a loosely typed dictionary | Add schema/versioning and validation when settings expand |
 | Persistence | SQLite/SQLAlchemy/Alembic foundation and preliminary parameter tables | Treat current parameter tables as placeholders; design canonical domain model first |
-| Database location | Alembic default pointed to repository-relative `mechpro.db` | Resolve to user data directory or explicit environment configuration |
-| Generated files | Root SQLite database and `src/mechpro.egg-info` were tracked | Remove generated artifacts and add ignore rules |
+| Database location | Alembic default pointed to repository-relative `mechprox.db` | Resolve to user data directory or explicit environment configuration |
+| Generated files | Root SQLite database and `src/mechprox.egg-info` were tracked | Remove generated artifacts and add ignore rules |
 | Test coverage | Four reported passing tests; no Qt window smoke test | Add offscreen Qt startup test |
 | CI coverage | Ubuntu/Python 3.11 only | Add Windows and Python 3.14 coverage while retaining Python 3.11 minimum |
 | AutoCAD | User confirms a previously working bridge | Reuse it; no repeated PoC or rewrite. Source/artifact must be located |
@@ -31,7 +31,7 @@ Date: 2026-11-08
 - Expand `.gitignore` for Python, Qt project, test and packaging artifacts.
 - Remove generated package metadata from the tracked source tree.
 - Remove the generated root database from this branch; its schema remains reproducible through Alembic migrations. The parent foundation branch and its history remain unchanged.
-- Resolve the Alembic database URL outside the repository, with `MECHPRO_DATABASE_URL` and `MECHPRO_DATA_DIR` overrides.
+- Resolve the Alembic database URL outside the repository, with `MECHPROX_DATABASE_URL` and `MECHPROX_DATA_DIR` overrides.
 - Add a Qt main-window smoke test using the offscreen platform plugin.
 - Expand CI to Ubuntu and Windows, on Python 3.11 and 3.14.
 - Update CAD/BIM, open-decision, repository-audit and roadmap documentation to reflect the confirmed AutoCAD bridge status.

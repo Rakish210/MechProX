@@ -115,3 +115,48 @@ def test_takeoff_append_rejects_stale_project_snapshot(repository: ProjectReposi
 
     with pytest.raises(CommercialAppendError, match="project changed"):
         repository.append_commercial_documents(model, result.bom, result.boq)
+
+
+def test_equipment_count_takeoff_uses_piece_units() -> None:
+    from mechprox.workflows.engineering_objects import add_equipment
+
+    model = EngineeringModel(project=Project(project_code="TO-COUNT", name="Equipment count"))
+    product = ProductReference(
+        catalogue_code="USER",
+        product_code="PUMP-01",
+        name="Circulation pump",
+        category_code="25.2",
+        unit_code="piece",
+        origin=InformationOrigin.USER_INPUT,
+    )
+    position = PositionReference(
+        catalogue_code="USER-BOQ",
+        position_code="25.200.001",
+        name="Pump installation",
+        unit_code="piece",
+    )
+    mapping = PositionProductMapping(
+        position_reference_id=position.id,
+        product_reference_id=product.id,
+        mapping_code="PUMP-COUNT",
+        mapping_version="1",
+        measurement_rule_code="COUNT",
+    )
+    model = add_equipment(
+        model,
+        name="Pump P-01",
+        category_code="pump",
+        discipline_code="HVAC",
+        equipment_type="pump",
+        product=product,
+        mapping=mapping,
+        position=position,
+        changed_by="test",
+    )
+
+    result = generate_takeoff(model)
+
+    assert result.bom.items[0].quantity.value == Decimal("1")
+    assert result.bom.items[0].quantity.unit_code == "piece"
+    assert result.boq.items[0].quantity.value == Decimal("1")
+    assert result.boq.items[0].quantity.unit_code == "piece"

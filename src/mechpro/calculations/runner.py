@@ -58,6 +58,10 @@ class CalculationRunner:
                 "method_revision": request.method_revision,
                 "engine_name": engine.engine_name,
                 "engine_version": engine.engine_version,
+                "project_id": str(request.project_id),
+                "effective_date": request.effective_date.isoformat(),
+                "jurisdiction_code": request.jurisdiction_code,
+                "purpose": request.purpose.value,
                 "input_snapshots": [
                     snapshot.model_dump(mode="json") for snapshot in input_snapshots
                 ],
@@ -76,6 +80,7 @@ class CalculationRunner:
             started_at=datetime.now(UTC),
             input_snapshots=input_snapshots,
             standard_reference_ids=standard_ids,
+            standard_snapshots=context.standard_references,
             input_hash=input_hash,
         )
 
@@ -258,6 +263,7 @@ class CalculationRunner:
                 value=revision.value,
                 parameter_revision=str(revision.id),
                 source_reference_ids=revision.source_reference_ids,
+                revision_snapshot=revision,
             )
             for code, revision in parameters.items()
         )
@@ -274,6 +280,7 @@ class CalculationRunner:
             payload = {
                 "engineering_object_id": str(item.id),
                 "object_revision_id": str(item.revision_id),
+                "object_snapshot": item.model_dump(mode="json"),
                 "properties": [
                     prop.model_dump(mode="json") for prop in item.properties
                 ],
@@ -289,6 +296,7 @@ class CalculationRunner:
                 CalculationInputSnapshot(
                     engineering_object_id=item.id,
                     object_revision_id=item.revision_id,
+                    object_snapshot=item,
                     property_snapshots=item.properties,
                     parameter_snapshots=parameter_snapshots,
                     source_reference_ids=tuple(sorted(item_source_ids, key=str)),

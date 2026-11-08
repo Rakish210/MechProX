@@ -52,6 +52,29 @@ def validate_engineering_objects(ctx: ValidationContext) -> None:
                     f"{path}.geometry_reference_ids",
                 )
 
+        if obj.position_mapping_id is not None:
+            mapping = ctx.mapping_by_id.get(obj.position_mapping_id)
+            if mapping is None:
+                ctx.add(
+                    "missing_mapping",
+                    "Engineering object references an unknown BOQ mapping.",
+                    f"{path}.position_mapping_id",
+                )
+            else:
+                assigned_product_id = (
+                    obj.material_product_reference_id
+                    if isinstance(obj, LinearElement)
+                    else obj.product_reference_id
+                    if isinstance(obj, Equipment)
+                    else None
+                )
+                if assigned_product_id != mapping.product_reference_id:
+                    ctx.add(
+                        "object_mapping_product_mismatch",
+                        "Engineering object mapping must reference its assigned physical product.",
+                        f"{path}.position_mapping_id",
+                    )
+
         if obj.revision_id is not None:
             revision = ctx.revision_by_id.get(obj.revision_id)
             if revision is None or revision.object_id != obj.id:

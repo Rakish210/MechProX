@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mechpro"
+name = "mechprox"
 version = "0.2.0"
-description = "Modular mechanical engineering automation platform"
+description = "MechProX — modular mechanical engineering automation platform"
 requires-python = ">=3.11"
 dependencies = [
   "PySide6>=6.6",
@@ -23,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-mechpro = "mechpro.app:main"
+mechprox = "mechpro.app:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         self.context = context
         self.repository = repository
         self.parameter_repository = parameter_repository
-        self.setWindowTitle("MechPro — Uzman Mekanik Tesisat Mühendisliği Platformu")
+        self.setWindowTitle("MechProX — Uzman Mekanik Tesisat Mühendisliği Platformu")
         self.resize(1280, 800)
         self.setMinimumSize(980, 640)
 
@@ -59,9 +59,9 @@ class MainWindow(QMainWindow):
         sidebar.setFixedWidth(238)
         side_layout = QVBoxLayout(sidebar)
         side_layout.setContentsMargins(18, 22, 14, 18)
-        brand = QLabel("MechPro")
-        brand.setObjectName("brand")
-        side_layout.addWidget(brand)
+        self.brand_label = QLabel("MechProX")
+        self.brand_label.setObjectName("brand")
+        side_layout.addWidget(self.brand_label)
         tagline = QLabel("ENGINEERING PLATFORM")
         tagline.setObjectName("brandTagline")
         side_layout.addWidget(tagline)
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
             ),
             ComingSoonPage(
                 "CAD / BIM",
-                "AutoCAD ve Revit kendi uygulamalarında çalışacak; MechPro köprüler üzerinden veri alışverişi yapacak.",
+                "AutoCAD ve Revit kendi uygulamalarında çalışacak; MechProX köprüleri üzerinden veri alışverişi yapacak.",
             ),
             ComingSoonPage("Raporlar", "Hesap raporları, metraj dökümleri ve proje teslim dokümanları."),
             ComingSoonPage(
@@ -155,12 +155,11 @@ class MainWindow(QMainWindow):
         QListWidget#navigation { border: 0; background: transparent; color: #cbd5e1; outline: 0; }
         QListWidget#navigation::item { padding: 12px 10px; border-radius: 6px; margin: 2px 0; }
         QListWidget#navigation::item:selected { background: #2b405b; color: white; font-weight: 600; }
-        QLabel#sectionTitle { font-size: 17pt; font-weight: 650; color: #172334; }
+        QLabel#sectionTitle { font-size: 16pt; font-weight: 650; color: #172334; }
         QLabel#pageTitle { font-size: 22pt; font-weight: 650; color: #172334; }
         QLabel#mutedText { color: #66758a; font-size: 10pt; }
         QLabel#statusPill { background: #e5edf6; color: #34516f; padding: 7px 12px; border-radius: 12px; }
         QLabel#metricValue { font-size: 27pt; font-weight: 700; color: #1c5d91; }
-        QLabel#sectionTitle { font-size: 16pt; font-weight: 650; color: #172334; }
         QWidget#metricCard { background: white; border: 1px solid #e0e6ed; border-radius: 9px; padding: 16px; }
         QPushButton#primaryButton { background: #1e659b; color: white; border: 0; border-radius: 6px; padding: 10px 16px; font-weight: 600; }
         QPushButton#primaryButton:hover { background: #185580; }

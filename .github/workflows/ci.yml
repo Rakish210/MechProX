@@ -1,4 +1,4 @@
-name: CI
+name: MechProX CI
 
 on: [push, pull_request]
 

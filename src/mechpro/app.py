@@ -17,19 +17,36 @@ from mechpro.ui.main_window import MainWindow
 
 
 def _application_data_dir() -> Path:
-    configured = os.environ.get("MECHPRO_DATA_DIR")
-    return Path(configured).expanduser() if configured else Path.home() / ".mechpro"
+    configured = os.environ.get("MECHPROX_DATA_DIR") or os.environ.get("MECHPRO_DATA_DIR")
+    if configured:
+        return Path(configured).expanduser()
+
+    data_dir = Path.home() / ".mechprox"
+    legacy_data_dir = Path.home() / ".mechpro"
+    if not data_dir.exists() and legacy_data_dir.exists():
+        return legacy_data_dir
+    return data_dir
+
+
+def _database_file(data_dir: Path) -> Path:
+    current_database = data_dir / "mechprox.db"
+    legacy_database = data_dir / "mechpro.db"
+    if not current_database.exists() and legacy_database.exists():
+        return legacy_database
+    return current_database
 
 
 def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository]:
     data_dir = _application_data_dir()
-    database_url = os.environ.get("MECHPRO_DATABASE_URL")
+    database_url = os.environ.get("MECHPROX_DATABASE_URL") or os.environ.get(
+        "MECHPRO_DATABASE_URL"
+    )
     if database_url:
         from sqlalchemy import create_engine
 
         engine = create_engine(database_url, future=True)
     else:
-        engine = create_engine_sqlite(data_dir / "mechpro.db")
+        engine = create_engine_sqlite(_database_file(data_dir))
 
     project_root = Path(__file__).resolve().parents[2]
     alembic_path = project_root / "alembic.ini"
@@ -52,8 +69,8 @@ def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryReposito
 def main() -> int:
     logger = configure_logging()
     app = QApplication(sys.argv)
-    app.setApplicationName("MechPro")
-    app.setOrganizationName("MechPro")
+    app.setApplicationName("MechProX")
+    app.setOrganizationName("MechProX")
 
     data_dir = _application_data_dir()
     config = ConfigManager(data_dir / "config.json")
@@ -70,7 +87,7 @@ def main() -> int:
         calculation_runner,
     )
     window.show()
-    logger.info("MechPro desktop application started")
+    logger.info("MechProX desktop application started")
     return app.exec()
 
 

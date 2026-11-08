@@ -116,13 +116,16 @@ def validate_engineering_objects(ctx: ValidationContext) -> None:
                     "Linear element material product does not exist.",
                     f"{path}.material_product_reference_id",
                 )
-        elif isinstance(obj, Equipment) and obj.product_reference_id is not None:
-            if obj.product_reference_id not in ctx.product_by_id:
-                ctx.add(
-                    "missing_product",
-                    "Equipment product reference does not exist.",
-                    f"{path}.product_reference_id",
-                )
+        elif (
+            isinstance(obj, Equipment)
+            and obj.product_reference_id is not None
+            and obj.product_reference_id not in ctx.product_by_id
+        ):
+            ctx.add(
+                "missing_product",
+                "Equipment product reference does not exist.",
+                f"{path}.product_reference_id",
+            )
 
 
 def validate_engineering_networks(ctx: ValidationContext) -> None:

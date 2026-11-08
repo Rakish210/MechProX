@@ -3,11 +3,11 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from mechpro.domain.base import Quantity
-from mechpro.domain.example import create_natural_gas_reference_model
-from mechpro.domain.serialization import deserialize_model, serialize_model
-from mechpro.domain.units import UnitService, UnitValidationError
-from mechpro.domain.validation import ModelValidator
+from mechprox.domain.base import Quantity
+from mechprox.domain.example import create_natural_gas_reference_model
+from mechprox.domain.serialization import deserialize_model, serialize_model
+from mechprox.domain.units import UnitService, UnitValidationError
+from mechprox.domain.validation import ModelValidator
 
 
 def test_synthetic_reference_model_is_valid() -> None:
@@ -125,7 +125,7 @@ def test_calculation_result_must_reference_captured_input_objects() -> None:
     assert any(issue.code == "result_source_not_captured" for issue in report.issues)
 
 def test_network_rejects_incompatible_connector_domains() -> None:
-    from mechpro.domain.enums import ConnectorDomain
+    from mechprox.domain.enums import ConnectorDomain
 
     model = create_natural_gas_reference_model()
     first_pipe = model.objects[1]

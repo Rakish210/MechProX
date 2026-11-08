@@ -5,15 +5,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
-from mechpro.data.project_repository import (
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
+from mechprox.data.project_repository import (
     ProjectAlreadyExistsError,
     ProjectNotFoundError,
     ProjectRepository,
 )
-from mechpro.domain.model import EngineeringModel
-from mechpro.domain.project import Project
+from mechprox.domain.model import EngineeringModel
+from mechprox.domain.project import Project
 
 
 @pytest.fixture

@@ -55,12 +55,12 @@ See [MechProX Product Direction](docs/product/PRODUCT_DIRECTION.md) for the prod
 
 ## Architecture
 
-- `src/mechpro/core`: application context, configuration and shared services.
-- `src/mechpro/domain`: pure, typed engineering domain contracts.
-- `src/mechpro/data`: persistence adapters and repositories.
-- `src/mechpro/modules`: bounded application modules.
-- `src/mechpro/ui`: PySide6 desktop control center.
+- `src/mechprox/core`: application context, configuration and shared services.
+- `src/mechprox/domain`: pure, typed engineering domain contracts.
+- `src/mechprox/data`: persistence adapters and repositories.
+- `src/mechprox/modules`: bounded application modules.
+- `src/mechprox/ui`: PySide6 desktop control center.
 - `docs/architecture`: architecture decisions and domain documentation.
 - `docs/product`: product direction, scope and feature priorities.
 
-The internal Python import namespace remains `mechpro` for source compatibility. The distributed desktop product, installer identity and user-facing application name are MechProX. AutoCAD and Revit remain external desktop applications accessed through bridge adapters. The previously working AutoCAD bridge is to be reused, not recreated as a proof of concept.
+The internal Python import namespace remains `mechprox` for source compatibility. The distributed desktop product, installer identity and user-facing application name are MechProX. AutoCAD and Revit remain external desktop applications accessed through bridge adapters. The previously working AutoCAD bridge is to be reused, not recreated as a proof of concept.

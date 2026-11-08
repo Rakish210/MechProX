@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mechpro.app import _application_data_dir
+from mechprox.app import _application_data_dir
 
 
 def test_default_application_data_directory_uses_mechprox(tmp_path, monkeypatch) -> None:

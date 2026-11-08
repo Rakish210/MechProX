@@ -6,15 +6,15 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
-from mechpro.data.parameter_registry_repository import (
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
+from mechprox.data.parameter_registry_repository import (
     ParameterAlreadyExistsError,
     ParameterRegistryRepository,
 )
-from mechpro.domain.base import Quantity, QuantityValue, ScalarValue
-from mechpro.domain.enums import InformationOrigin
-from mechpro.domain.parameters import (
+from mechprox.domain.base import Quantity, QuantityValue, ScalarValue
+from mechprox.domain.enums import InformationOrigin
+from mechprox.domain.parameters import (
     ParameterDefinition,
     ParameterResolutionError,
     ParameterRevision,

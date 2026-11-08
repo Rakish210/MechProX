@@ -5,8 +5,8 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import URL, make_url
 
 from alembic import context
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
 
 config = context.config
 target_metadata = Base.metadata

@@ -10,7 +10,7 @@ Multiple engineering disciplines, drawing/BIM adapters, calculation methods, BOM
 
 ## Decision
 
-- Use immutable Pydantic domain contracts in a dedicated `mechpro.domain` package.
+- Use immutable Pydantic domain contracts in a dedicated `mechprox.domain` package.
 - Keep domain contracts independent from PySide6, SQLAlchemy, SQLite and vendor APIs.
 - Use explicit typed variants for property values; reject unrecognized fields.
 - Use Decimal magnitudes with explicit unit codes and Pint for offline dimensional validation/conversion.

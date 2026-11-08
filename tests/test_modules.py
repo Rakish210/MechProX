@@ -1,7 +1,7 @@
 import pytest
 
-from mechpro.core.context import AppContext
-from mechpro.core.module_registry import ModuleRegistry, ModuleSpec
+from mechprox.core.context import AppContext
+from mechprox.core.module_registry import ModuleRegistry, ModuleSpec
 
 
 def _factory(_: AppContext) -> object:

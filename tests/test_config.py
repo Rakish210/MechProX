@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from mechpro.core.config import ConfigManager
+from mechprox.core.config import ConfigManager
 
 
 def test_config_roundtrip():

@@ -79,7 +79,7 @@ class _SourceDialog(QDialog):
         kind = self.kind.currentData()
         origin = self.origin.currentData()
         if not isinstance(kind, SourceKind) or not isinstance(origin, InformationOrigin):
-            raise ValueError("Kaynak türü ve bilgi kökeni seçilmelidir.")
+            raise TypeError("Kaynak türü ve bilgi kökeni seçilmelidir.")
         page_number = int(self.page.text().strip()) if self.page.text().strip() else None
         uri = self.uri.text().strip() or None
         name = self.name.text().strip() or None

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from importlib.metadata import EntryPoint, entry_points
+from importlib.metadata import entry_points
 from typing import Any, Protocol
 
 from mechprox.core.context import AppContext
@@ -100,6 +100,13 @@ class ModulePageSpec:
             raise ModuleRegistrationError(f"Module page '{self.page_id}' requires a title.")
 
 
+class ModuleEntryPoint(Protocol):
+    name: str
+
+    def load(self) -> object:
+        """Load the provider callable from an installed distribution."""
+
+
 class PlatformModule(Protocol):
     """Lifecycle contract for built-in and installed module packages."""
 
@@ -174,7 +181,7 @@ class ModuleRegistry:
         self,
         enabled_module_ids: Iterable[str] = (),
         *,
-        discovered: Iterable[EntryPoint] | None = None,
+        discovered: Iterable[ModuleEntryPoint] | None = None,
     ) -> tuple[str, ...]:
         """Load explicitly enabled installed Python modules.
 

@@ -37,6 +37,8 @@ class CalculationRun(IdentifiedModel):
     standard_reference_ids: tuple[UUID, ...] = ()
     input_hash: str = Field(min_length=1)
     output_hash: str | None = None
+    warnings: tuple[str, ...] = ()
+    error_message: str | None = None
 
 
 class CalculationResult(IdentifiedModel):

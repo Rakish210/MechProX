@@ -1,19 +1,20 @@
+import pytest
+
 from mechpro.core.module_registry import ModuleRegistry, ModuleSpec
-from mechpro.modules.sample_module import create_sample_widget
 
 
-def test_module_registration():
-    reg = ModuleRegistry()
-    reg.register(ModuleSpec(name="s", title="Sample", factory=create_sample_widget))
-    assert len(reg.all()) == 1
-    assert reg.all()[0].name == "s"
+def test_module_registration() -> None:
+    registry = ModuleRegistry()
+    registry.register(ModuleSpec(name="projects", title="Projects", factory=lambda _: object()))
 
-def test_duplicate_registration():
-    reg = ModuleRegistry()
-    reg.register(ModuleSpec(name="s", title="Sample", factory=create_sample_widget))
-    try:
-        reg.register(ModuleSpec(name="s", title="Sample2", factory=create_sample_widget))
-        raised = False
-    except ValueError:
-        raised = True
-    assert raised
+    assert len(registry.all()) == 1
+    assert registry.all()[0].name == "projects"
+
+
+def test_duplicate_registration_is_rejected() -> None:
+    registry = ModuleRegistry()
+    factory = lambda _: object()
+    registry.register(ModuleSpec(name="projects", title="Projects", factory=factory))
+
+    with pytest.raises(ValueError, match="Module already registered"):
+        registry.register(ModuleSpec(name="projects", title="Duplicate", factory=factory))

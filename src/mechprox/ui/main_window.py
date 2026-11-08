@@ -14,12 +14,14 @@ from mechprox.core.context import AppContext
 from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
+from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.ui.catalogue_page import CataloguePage
 from mechprox.ui.commercial_page import CommercialPage
 from mechprox.ui.engineering_data_page import EngineeringDataPage
 from mechprox.ui.gas_demand_page import GasDemandPage
 from mechprox.ui.parameter_registry_page import ParameterRegistryPage
 from mechprox.ui.project_page import ComingSoonPage, DashboardPage, ProjectPage
+from mechprox.ui.source_registry_page import SourceRegistryPage
 
 
 class MainWindow(QMainWindow):
@@ -29,6 +31,7 @@ class MainWindow(QMainWindow):
         ("Mühendislik Verisi", "engineering"),
         ("Hesaplamalar", "calculations"),
         ("Parametre Kütüphanesi", "parameters"),
+        ("Kaynak ve Standartlar", "sources"),
         ("Ürün ve Poz Kütüphanesi", "library"),
         ("BOM / BOQ", "commercial"),
         ("CAD / BIM", "cad"),
@@ -43,12 +46,14 @@ class MainWindow(QMainWindow):
         parameter_repository: ParameterRegistryRepository,
         calculation_runner: CalculationRunner,
         catalogue_repository: CatalogueRepository,
+        source_repository: SourceRegistryRepository,
     ) -> None:
         super().__init__()
         self.context = context
         self.repository = repository
         self.parameter_repository = parameter_repository
         self.catalogue_repository = catalogue_repository
+        self.source_repository = source_repository
         self.setWindowTitle("MechProX — Uzman Mekanik Tesisat Mühendisliği Platformu")
         self.resize(1280, 800)
         self.setMinimumSize(980, 640)
@@ -104,6 +109,7 @@ class MainWindow(QMainWindow):
         self.parameters = ParameterRegistryPage(parameter_repository)
         self.calculations = GasDemandPage(repository, calculation_runner)
         self.catalogue = CataloguePage(catalogue_repository)
+        self.sources = SourceRegistryPage(source_repository)
         self.engineering_data = EngineeringDataPage(repository, catalogue_repository)
         self.commercial = CommercialPage(repository)
         pages = (
@@ -112,6 +118,7 @@ class MainWindow(QMainWindow):
             self.engineering_data,
             self.calculations,
             self.parameters,
+            self.sources,
             self.catalogue,
             self.commercial,
             ComingSoonPage(
@@ -147,8 +154,10 @@ class MainWindow(QMainWindow):
         elif index == 4:
             self.parameters.refresh()
         elif index == 5:
-            self.catalogue.refresh()
+            self.sources.refresh()
         elif index == 6:
+            self.catalogue.refresh()
+        elif index == 7:
             self.commercial.refresh()
 
     @staticmethod

@@ -13,6 +13,7 @@ from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.db import create_engine_sqlite, create_session_factory
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
+from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.engines.registry import create_default_calculation_engine_registry
 from mechprox.ui.main_window import MainWindow
 
@@ -24,7 +25,12 @@ def _application_data_dir() -> Path:
     return Path.home() / ".mechprox"
 
 
-def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository, CatalogueRepository]:
+def _initialize_database() -> tuple[
+    ProjectRepository,
+    ParameterRegistryRepository,
+    CatalogueRepository,
+    SourceRegistryRepository,
+]:
     data_dir = _application_data_dir()
     database_url = os.environ.get("MECHPROX_DATABASE_URL")
     if database_url:
@@ -50,6 +56,7 @@ def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryReposito
         ProjectRepository(session_factory),
         ParameterRegistryRepository(session_factory),
         CatalogueRepository(session_factory),
+        SourceRegistryRepository(session_factory),
     )
 
 
@@ -61,7 +68,12 @@ def main() -> int:
 
     data_dir = _application_data_dir()
     config = ConfigManager(data_dir / "config.json")
-    project_repository, parameter_repository, catalogue_repository = _initialize_database()
+    (
+        project_repository,
+        parameter_repository,
+        catalogue_repository,
+        source_repository,
+    ) = _initialize_database()
     context = AppContext(config=config.data, logger=logger)
     calculation_runner = CalculationRunner(
         create_default_calculation_engine_registry(),
@@ -73,6 +85,7 @@ def main() -> int:
         parameter_repository,
         calculation_runner,
         catalogue_repository,
+        source_repository,
     )
     window.show()
     logger.info("MechProX desktop application started")

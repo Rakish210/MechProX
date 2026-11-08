@@ -82,7 +82,7 @@ class NewParameterDialog(QDialog):
     def build_definition(self) -> ParameterDefinition:
         value_kind = self.value_kind.currentData()
         if not isinstance(value_kind, ParameterValueKind):
-            raise ValueError("A parameter value type must be selected.")
+            raise TypeError("A parameter value type must be selected.")
         return ParameterDefinition(
             code=self.code.text().strip(),
             name=self.name.text().strip(),
@@ -189,11 +189,11 @@ class NewParameterRevisionDialog(QDialog):
         status = self.status.currentData()
         origin = self.origin.currentData()
         if not isinstance(scope, ParameterScopeKind):
-            raise ValueError("A parameter scope must be selected.")
+            raise TypeError("A parameter scope must be selected.")
         if not isinstance(status, ParameterRevisionStatus):
-            raise ValueError("A revision status must be selected.")
+            raise TypeError("A revision status must be selected.")
         if not isinstance(origin, InformationOrigin):
-            raise ValueError("An information origin must be selected.")
+            raise TypeError("An information origin must be selected.")
 
         if self.definition.value_kind == ParameterValueKind.QUANTITY:
             magnitude = Decimal(self.value.text().strip())

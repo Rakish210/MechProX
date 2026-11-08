@@ -34,7 +34,7 @@ jobs:
                   raise SystemExit("Both old and new package directories exist; refusing to overwrite.")
               shutil.move(str(old), str(new))
 
-          pattern = re.compile(r"\\bmechpro\\b", re.IGNORECASE)
+          pattern = re.compile(r"\bmechpro\b", re.IGNORECASE)
           changed = []
           for path in Path(".").rglob("*"):
               if not path.is_file() or ".git" in path.parts or path.name == "logo.jpg":

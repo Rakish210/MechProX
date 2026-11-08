@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from mechpro.calculations import (
+    CalculationContext,
     CalculationEngineRegistry,
     CalculationOutput,
     CalculationRequest,
@@ -18,7 +19,7 @@ from mechpro.data.db import Base
 from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
 from mechpro.domain.base import Quantity, QuantityValue, ScalarValue
-from mechpro.domain.calculations import CalculationRun
+from mechpro.domain.engineering import LinearElement
 from mechpro.domain.enums import (
     CalculationPurpose,
     CalculationState,
@@ -32,7 +33,6 @@ from mechpro.domain.parameters import (
     ParameterRevisionStatus,
     ParameterValueKind,
 )
-from mechpro.domain.units import UnitService
 from mechpro.domain.validation import ModelValidator
 
 
@@ -43,7 +43,7 @@ class TotalLengthTestEngine:
     engine_version = "1.0"
     required_parameter_codes = ("TEST.LENGTH_FACTOR",)
 
-    def calculate(self, context):
+    def calculate(self, context: CalculationContext) -> CalculationOutput:
         factor = context.parameters["TEST.LENGTH_FACTOR"].value
         if not isinstance(factor, ScalarValue) or not isinstance(factor.value, Decimal):
             raise TypeError("Test engine expects a Decimal scalar parameter.")
@@ -51,7 +51,7 @@ class TotalLengthTestEngine:
             (
                 item.length.value
                 for item in context.input_objects
-                if hasattr(item, "length")
+                if isinstance(item, LinearElement)
             ),
             Decimal(0),
         )
@@ -77,7 +77,7 @@ class TotalLengthTestEngine:
 class FailingTestEngine(TotalLengthTestEngine):
     method_code = "TEST.FAILING"
 
-    def calculate(self, context):
+    def calculate(self, context: CalculationContext) -> CalculationOutput:
         raise RuntimeError("deliberate test failure")
 
 
@@ -122,12 +122,17 @@ def model_and_runner(repositories):
     return model, project_repository, runner
 
 
-def _request(model: EngineeringModel, method_code: str = "TEST.PIPE_LENGTH") -> CalculationRequest:
+def _request(
+    model: EngineeringModel,
+    method_code: str = "TEST.PIPE_LENGTH",
+) -> CalculationRequest:
     return CalculationRequest(
         project_id=model.project.id,
         method_code=method_code,
         method_revision="1",
-        input_object_ids=tuple(item.id for item in model.objects if hasattr(item, "length")),
+        input_object_ids=tuple(
+            item.id for item in model.objects if isinstance(item, LinearElement)
+        ),
         parameter_codes=("TEST.LENGTH_FACTOR",),
         effective_date=date(2026, 11, 8),
         purpose=CalculationPurpose.ENGINEERING,
@@ -145,6 +150,7 @@ def test_runner_creates_reproducible_run_and_persists_results(model_and_runner) 
     assert execution.run.output_hash
     assert len(execution.run.input_snapshots) == 3
     assert len(execution.results) == 1
+    assert isinstance(execution.results[0].value, QuantityValue)
     assert execution.results[0].value.quantity.value == Decimal("26.0")
     assert restored.calculation_runs[-1] == execution.run
     assert restored.calculation_results[-1] == execution.results[0]
@@ -169,7 +175,7 @@ def test_runner_records_engine_failure(model_and_runner) -> None:
 
 def test_runner_rejects_missing_controlled_object_revision(model_and_runner) -> None:
     model, _, runner = model_and_runner
-    first_pipe = next(item for item in model.objects if hasattr(item, "length"))
+    first_pipe = next(item for item in model.objects if isinstance(item, LinearElement))
     invalid_pipe = first_pipe.model_copy(update={"revision_id": None})
     invalid_objects = tuple(
         invalid_pipe if item.id == first_pipe.id else item for item in model.objects
@@ -198,12 +204,11 @@ def test_runner_rejects_unrequested_parameter_dependency(model_and_runner) -> No
 
 def test_runner_rejects_result_referencing_uncaptured_objects(model_and_runner) -> None:
     model, _, runner = model_and_runner
-    engine = runner._registry.get("TEST.PIPE_LENGTH", "1")
 
     class InvalidResultEngine(TotalLengthTestEngine):
         method_code = "TEST.INVALID_RESULT"
 
-        def calculate(self, context):
+        def calculate(self, context: CalculationContext) -> CalculationOutput:
             output = super().calculate(context)
             invalid = output.results[0]
             return CalculationOutput(

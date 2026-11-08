@@ -21,11 +21,11 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy.exc import IntegrityError
 
-from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.data.parameter_registry_repository import (
     ParameterAlreadyExistsError,
     ParameterRegistryRepository,
 )
+from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.domain.base import Quantity, QuantityValue, ScalarValue
 from mechprox.domain.enums import InformationOrigin
 from mechprox.domain.parameters import (

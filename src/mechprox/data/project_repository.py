@@ -8,8 +8,10 @@ from sqlalchemy.orm import sessionmaker
 
 from mechprox.data.models import ProjectSnapshotRecord
 from mechprox.domain.calculations import CalculationResult, CalculationRun
+from mechprox.domain.commercial import BOMDocument, BOQDocument
 from mechprox.domain.model import EngineeringModel
 from mechprox.domain.serialization import deserialize_model, serialize_model
+from mechprox.domain.validation import ModelValidator
 
 
 class ProjectAlreadyExistsError(ValueError):
@@ -22,6 +24,10 @@ class ProjectNotFoundError(LookupError):
 
 class CalculationAppendError(ValueError):
     """Raised when a calculation execution cannot be appended safely."""
+
+
+class CommercialAppendError(ValueError):
+    """Raised when a takeoff document cannot be appended to the current model."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +90,44 @@ class ProjectRepository:
             record.name = model.project.name
             record.schema_version = model.schema_version
             record.model_json = serialize_model(model)
+            record.updated_at = datetime.now(UTC)
+            session.flush()
+            return self._summary(record)
+
+    def append_commercial_documents(
+        self,
+        expected_model: EngineeringModel,
+        bom: BOMDocument,
+        boq: BOQDocument,
+    ) -> ProjectSummary:
+        """Atomically append takeoff documents only if the source model is unchanged."""
+        project_id = expected_model.project.id
+        if bom.project_id != project_id or boq.project_id != project_id:
+            raise CommercialAppendError("BOM and BOQ must belong to the target project.")
+        if any(item.id == bom.id for item in expected_model.bom_documents):
+            raise CommercialAppendError("BOM document already exists in the expected model.")
+        if any(item.id == boq.id for item in expected_model.boq_documents):
+            raise CommercialAppendError("BOQ document already exists in the expected model.")
+
+        with self._session_factory.begin() as session:
+            record = session.get(ProjectSnapshotRecord, str(project_id))
+            if record is None:
+                raise ProjectNotFoundError(f"Project '{project_id}' was not found.")
+            current_model = deserialize_model(record.model_json)
+            if current_model != expected_model:
+                raise CommercialAppendError(
+                    "The project changed while takeoff was being prepared. "
+                    "Refresh the project and generate BOM/BOQ again."
+                )
+            updated_model = current_model.model_copy(
+                update={
+                    "bom_documents": (*current_model.bom_documents, bom),
+                    "boq_documents": (*current_model.boq_documents, boq),
+                }
+            )
+            ModelValidator().validate(updated_model).raise_for_errors()
+            record.schema_version = updated_model.schema_version
+            record.model_json = serialize_model(updated_model)
             record.updated_at = datetime.now(UTC)
             session.flush()
             return self._summary(record)

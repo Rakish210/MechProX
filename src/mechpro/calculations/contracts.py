@@ -8,8 +8,8 @@ from mechpro.domain.base import PropertyValue, StandardReference
 from mechpro.domain.calculations import CalculationResult, CalculationRun
 from mechpro.domain.engineering import EngineeringObjectRecord
 from mechpro.domain.enums import CalculationPurpose
-from mechpro.domain.model import EngineeringModel
 from mechpro.domain.parameters import ParameterRevision
+from mechpro.domain.project import Project
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,7 +43,7 @@ class CalculationOutput:
 
 @dataclass(frozen=True, slots=True)
 class CalculationContext:
-    model: EngineeringModel
+    project: Project
     request: CalculationRequest
     input_objects: tuple[EngineeringObjectRecord, ...]
     parameters: Mapping[str, ParameterRevision]

@@ -123,6 +123,24 @@ class ProjectRepository:
                 raise CalculationAppendError(
                     f"Calculation run '{run.id}' has already been appended."
                 )
+
+            current_objects = {item.id: item for item in current_model.objects}
+            for snapshot in run.input_snapshots:
+                current_object = current_objects.get(snapshot.engineering_object_id)
+                if (
+                    current_object is None
+                    or current_object.revision_id != snapshot.object_revision_id
+                    or (
+                        snapshot.object_snapshot is not None
+                        and current_object != snapshot.object_snapshot
+                    )
+                ):
+                    raise CalculationAppendError(
+                        "Calculation input object "
+                        f"'{snapshot.engineering_object_id}' changed after the run inputs "
+                        "were captured. Recalculate against the current project model."
+                    )
+
             existing_result_ids = {
                 result.id for result in current_model.calculation_results
             }

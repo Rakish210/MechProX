@@ -2,7 +2,6 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -21,7 +20,6 @@ from PySide6.QtWidgets import (
 
 from mechpro.calculations.contracts import CalculationRequest
 from mechpro.calculations.runner import CalculationPreconditionError, CalculationRunner
-from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import (
     CalculationAppendError,
     ProjectNotFoundError,
@@ -31,7 +29,7 @@ from mechpro.domain.base import QuantityValue
 from mechpro.domain.engineering import Equipment
 from mechpro.domain.enums import CalculationPurpose, CalculationState
 from mechpro.domain.units import UnitValidationError
-from mechpro.engines.gas.workflow import GasApplianceInputError, add_gas_appliance
+from mechpro.engines.gas.workflow import add_gas_appliance
 
 
 class GasDemandPage(QWidget):
@@ -42,12 +40,10 @@ class GasDemandPage(QWidget):
     def __init__(
         self,
         project_repository: ProjectRepository,
-        parameter_repository: ParameterRegistryRepository,
         calculation_runner: CalculationRunner,
     ) -> None:
         super().__init__()
         self.project_repository = project_repository
-        self.parameter_repository = parameter_repository
         self.calculation_runner = calculation_runner
 
         layout = QVBoxLayout(self)
@@ -74,12 +70,15 @@ class GasDemandPage(QWidget):
         self.appliance_power = QLineEdit()
         self.appliance_power.setPlaceholderText("Örn. 60")
         self.appliance_power.setMaximumWidth(140)
+        self.created_by = QLineEdit()
+        self.created_by.setPlaceholderText("Hazırlayan / kullanıcı kodu")
         self.add_appliance_button = QPushButton("Cihaz ekle")
         self.add_appliance_button.setObjectName("secondaryButton")
         self.add_appliance_button.clicked.connect(self._add_appliance)
         appliance_form.addWidget(self.appliance_name, 1)
         appliance_form.addWidget(QLabel("Isıl güç (kW)"))
         appliance_form.addWidget(self.appliance_power)
+        appliance_form.addWidget(self.created_by, 1)
         appliance_form.addWidget(self.add_appliance_button)
         layout.addLayout(appliance_form)
 
@@ -208,7 +207,7 @@ class GasDemandPage(QWidget):
                 model,
                 name=name,
                 thermal_input_power_kw=power,
-                changed_by="local-user",
+                changed_by=self.created_by.text().strip(),
             )
             self.project_repository.save(updated_model)
         except (InvalidOperation, ValueError, TypeError, ProjectNotFoundError) as exc:
@@ -272,6 +271,7 @@ class GasDemandPage(QWidget):
             for column, text in enumerate((result.label, value, unit)):
                 self.result_table.setItem(row, column, QTableWidgetItem(text))
 
+        self._load_selected_project()
         if execution.run.state == CalculationState.COMPLETED:
             self.status_label.setText("Hesaplama tamamlandı ve proje geçmişine kaydedildi.")
         else:
@@ -281,4 +281,3 @@ class GasDemandPage(QWidget):
                 "Gaz debisi hesaplanamadı",
                 execution.error or "Hesap motoru beklenmeyen bir hata döndürdü.",
             )
-        self._load_selected_project()

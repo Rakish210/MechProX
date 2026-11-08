@@ -6,7 +6,7 @@ from uuid import UUID
 from mechpro.domain.base import IdentifiedModel, Quantity, QuantityValue, ReferenceValue, Revision
 from mechpro.domain.calculations import CalculationRun
 from mechpro.domain.commercial import PositionProductMapping, PositionReference, ProductReference
-from mechpro.domain.engineering import EngineeringObjectRecord
+from mechpro.domain.engineering import Connector, EngineeringObjectRecord
 from mechpro.domain.enums import ValidationSeverity
 from mechpro.domain.model import EngineeringModel
 from mechpro.domain.network import Network
@@ -44,6 +44,7 @@ class ValidationContext:
     level_ids: set[UUID] = field(default_factory=set)
     discipline_codes: set[str] = field(default_factory=set)
     connector_owner: dict[UUID, UUID] = field(default_factory=dict)
+    connector_by_id: dict[UUID, Connector] = field(default_factory=dict)
     revision_target_ids: set[UUID] = field(default_factory=set)
 
     def __post_init__(self) -> None:
@@ -102,6 +103,9 @@ class ValidationContext:
             | {item.id for item in self.model.levels}
             | {item.id for item in self.model.spaces}
             | {item.id for item in self.model.systems}
+            | {item.id for item in self.model.source_references}
+            | {item.id for item in self.model.geometry_references}
+            | {item.id for item in self.model.standard_references}
             | {item.id for item in self.model.objects}
             | {item.id for item in self.model.networks}
             | {item.id for item in self.model.connections}

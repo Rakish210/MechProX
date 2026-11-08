@@ -1,16 +1,31 @@
+from mechpro.domain.engineering import Equipment, LinearElement
 from mechpro.domain.enums import ValidationSeverity
 from mechpro.domain.validation_context import ValidationContext
+
+
+def _assigned_product_id(obj: object):
+    if isinstance(obj, LinearElement):
+        return obj.material_product_reference_id
+    if isinstance(obj, Equipment):
+        return obj.product_reference_id
+    return None
 
 
 def validate_commercial_records(ctx: ValidationContext) -> None:
     model = ctx.model
 
     for index, product in enumerate(model.products):
-        ctx.validate_sources(product.source_reference_ids, f"products[{index}].source_reference_ids")
+        ctx.validate_sources(
+            product.source_reference_ids,
+            f"products[{index}].source_reference_ids",
+        )
         ctx.validate_unit_code(product.unit_code, f"products[{index}].unit_code")
 
     for index, position in enumerate(model.positions):
-        ctx.validate_sources(position.source_reference_ids, f"positions[{index}].source_reference_ids")
+        ctx.validate_sources(
+            position.source_reference_ids,
+            f"positions[{index}].source_reference_ids",
+        )
         ctx.validate_unit_code(position.unit_code, f"positions[{index}].unit_code")
 
     for index, mapping in enumerate(model.position_product_mappings):
@@ -47,6 +62,19 @@ def validate_commercial_records(ctx: ValidationContext) -> None:
                         item_path,
                     )
             ctx.validate_object_sources(item.source_object_ids, item_path)
+            for source_id in item.source_object_ids:
+                source_object = ctx.object_by_id.get(source_id)
+                assigned_product_id = (
+                    _assigned_product_id(source_object)
+                    if source_object is not None
+                    else None
+                )
+                if assigned_product_id is not None and assigned_product_id != item.product_reference_id:
+                    ctx.add(
+                        "bom_source_product_mismatch",
+                        "BOM product does not match the product assigned to a source object.",
+                        item_path,
+                    )
 
     for index, document in enumerate(model.boq_documents):
         path = f"boq_documents[{index}]"
@@ -90,6 +118,12 @@ def validate_commercial_records(ctx: ValidationContext) -> None:
                         "BOQ item measurement rule differs from its mapping rule.",
                         item_path,
                     )
+                if mapping.mapping_version != item.measurement_rule_version:
+                    ctx.add(
+                        "measurement_rule_version_mismatch",
+                        "BOQ item measurement-rule version differs from its mapping version.",
+                        item_path,
+                    )
                 if not mapping.enabled:
                     ctx.add(
                         "inactive_mapping",
@@ -97,4 +131,20 @@ def validate_commercial_records(ctx: ValidationContext) -> None:
                         item_path,
                         severity=ValidationSeverity.WARNING,
                     )
+                for source_id in item.source_object_ids:
+                    source_object = ctx.object_by_id.get(source_id)
+                    assigned_product_id = (
+                        _assigned_product_id(source_object)
+                        if source_object is not None
+                        else None
+                    )
+                    if (
+                        assigned_product_id is not None
+                        and assigned_product_id != mapping.product_reference_id
+                    ):
+                        ctx.add(
+                            "boq_source_product_mismatch",
+                            "BOQ mapping product differs from the product assigned to a source object.",
+                            item_path,
+                        )
             ctx.validate_object_sources(item.source_object_ids, item_path)

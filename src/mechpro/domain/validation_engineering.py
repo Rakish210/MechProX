@@ -1,5 +1,11 @@
 from mechpro.domain.base import Revision
-from mechpro.domain.engineering import LinearElement
+from mechpro.domain.engineering import Equipment, LinearElement
+from mechpro.domain.enums import (
+    ConnectionDirection,
+    ConnectionKind,
+    ConnectorDirection,
+    ConnectorDomain,
+)
 from mechpro.domain.project import EngineeringSystem
 from mechpro.domain.validation_context import ValidationContext
 
@@ -31,7 +37,11 @@ def validate_engineering_objects(ctx: ValidationContext) -> None:
                     path,
                 )
         if obj.level_id is not None and obj.level_id not in ctx.level_ids:
-            ctx.add("missing_level", "Engineering object references an unknown level.", f"{path}.level_id")
+            ctx.add(
+                "missing_level",
+                "Engineering object references an unknown level.",
+                f"{path}.level_id",
+            )
 
         ctx.validate_sources(obj.source_reference_ids, f"{path}.source_reference_ids")
         for geometry_id in obj.geometry_reference_ids:
@@ -62,6 +72,7 @@ def validate_engineering_objects(ctx: ValidationContext) -> None:
                 )
             else:
                 ctx.connector_owner[connector.id] = obj.id
+                ctx.connector_by_id[connector.id] = connector
             if connector.code in connector_codes:
                 ctx.add(
                     "duplicate_connector_code",
@@ -72,7 +83,10 @@ def validate_engineering_objects(ctx: ValidationContext) -> None:
 
         for property_index, prop in enumerate(obj.properties):
             property_path = f"{path}.properties[{property_index}]"
-            ctx.validate_sources(prop.source_reference_ids, f"{property_path}.source_reference_ids")
+            ctx.validate_sources(
+                prop.source_reference_ids,
+                f"{property_path}.source_reference_ids",
+            )
             if (
                 prop.standard_reference_id is not None
                 and prop.standard_reference_id not in ctx.standard_ids
@@ -102,6 +116,13 @@ def validate_engineering_objects(ctx: ValidationContext) -> None:
                     "Linear element material product does not exist.",
                     f"{path}.material_product_reference_id",
                 )
+        elif isinstance(obj, Equipment) and obj.product_reference_id is not None:
+            if obj.product_reference_id not in ctx.product_by_id:
+                ctx.add(
+                    "missing_product",
+                    "Equipment product reference does not exist.",
+                    f"{path}.product_reference_id",
+                )
 
 
 def validate_engineering_networks(ctx: ValidationContext) -> None:
@@ -111,15 +132,33 @@ def validate_engineering_networks(ctx: ValidationContext) -> None:
         path = f"networks[{index}]"
         if network.project_id != model.project.id:
             ctx.add("wrong_project", "Network must belong to the model project.", path)
+        if len(set(network.member_object_ids)) != len(network.member_object_ids):
+            ctx.add(
+                "duplicate_network_member",
+                "Network contains a duplicate engineering object.",
+                f"{path}.member_object_ids",
+            )
+        if len(set(network.connection_ids)) != len(network.connection_ids):
+            ctx.add(
+                "duplicate_network_connection",
+                "Network contains a duplicate connection.",
+                f"{path}.connection_ids",
+            )
+
         system = ctx.system_by_id.get(network.system_id)
         if system is None:
-            ctx.add("missing_system", "Network references an unknown system.", f"{path}.system_id")
+            ctx.add(
+                "missing_system",
+                "Network references an unknown system.",
+                f"{path}.system_id",
+            )
         elif system.project_id != network.project_id:
             ctx.add(
                 "wrong_system_project",
                 "Network and system belong to different projects.",
                 path,
             )
+
         for member_id in network.member_object_ids:
             member = ctx.object_by_id.get(member_id)
             if member is None:
@@ -158,15 +197,24 @@ def validate_engineering_networks(ctx: ValidationContext) -> None:
         path = f"connections[{index}]"
         network = ctx.network_by_id.get(connection.network_id)
         if network is None:
-            ctx.add("missing_network", "Connection references an unknown network.", f"{path}.network_id")
+            ctx.add(
+                "missing_network",
+                "Connection references an unknown network.",
+                f"{path}.network_id",
+            )
             continue
         if connection.id not in network.connection_ids:
-            ctx.add("connection_not_listed", "Network does not list this connection.", path)
+            ctx.add(
+                "connection_not_listed",
+                "Network does not list this connection.",
+                path,
+            )
 
-        for side, endpoint in (
+        endpoints = (
             ("from_endpoint", connection.from_endpoint),
             ("to_endpoint", connection.to_endpoint),
-        ):
+        )
+        for side, endpoint in endpoints:
             if endpoint.object_id not in ctx.object_by_id:
                 ctx.add(
                     "connection_object_missing",
@@ -187,3 +235,65 @@ def validate_engineering_networks(ctx: ValidationContext) -> None:
                     f"{path}.{side}",
                 )
         ctx.validate_sources(connection.source_reference_ids, f"{path}.source_reference_ids")
+
+        from_connector = ctx.connector_by_id.get(connection.from_endpoint.connector_id)
+        to_connector = ctx.connector_by_id.get(connection.to_endpoint.connector_id)
+        if from_connector is None or to_connector is None:
+            continue
+
+        if connection.connection_kind in (ConnectionKind.PHYSICAL, ConnectionKind.FLOW):
+            if (
+                from_connector.domain != to_connector.domain
+                and ConnectorDomain.GENERIC
+                not in (from_connector.domain, to_connector.domain)
+            ):
+                ctx.add(
+                    "connection_domain_mismatch",
+                    "Connected ports must use compatible connector domains.",
+                    path,
+                )
+
+            if (
+                connection.direction == ConnectionDirection.A_TO_B
+                and (
+                    from_connector.direction
+                    not in (
+                        ConnectorDirection.OUTLET,
+                        ConnectorDirection.BIDIRECTIONAL,
+                        ConnectorDirection.UNSPECIFIED,
+                    )
+                    or to_connector.direction
+                    not in (
+                        ConnectorDirection.INLET,
+                        ConnectorDirection.BIDIRECTIONAL,
+                        ConnectorDirection.UNSPECIFIED,
+                    )
+                )
+            ):
+                ctx.add(
+                    "connection_direction_mismatch",
+                    "A-to-B connection must run from an outlet to an inlet.",
+                    path,
+                )
+            elif (
+                connection.direction == ConnectionDirection.B_TO_A
+                and (
+                    from_connector.direction
+                    not in (
+                        ConnectorDirection.INLET,
+                        ConnectorDirection.BIDIRECTIONAL,
+                        ConnectorDirection.UNSPECIFIED,
+                    )
+                    or to_connector.direction
+                    not in (
+                        ConnectorDirection.OUTLET,
+                        ConnectorDirection.BIDIRECTIONAL,
+                        ConnectorDirection.UNSPECIFIED,
+                    )
+                )
+            ):
+                ctx.add(
+                    "connection_direction_mismatch",
+                    "B-to-A connection must run from an inlet to an outlet.",
+                    path,
+                )

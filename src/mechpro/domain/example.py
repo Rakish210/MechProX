@@ -161,7 +161,7 @@ def create_natural_gas_reference_model() -> EngineeringModel:
             element_type="pipe_segment",
             length=Quantity(value=pipe_lengths[index], unit_code="meter"),
             nominal_size="DN-DEMO",
-            material_product_reference_id=None,
+            material_product_reference_id=pipe_product_id,
             information_origin=InformationOrigin.DRAWING_IMPORT,
             source_reference_ids=(source_ids[index + 1],),
             geometry_reference_ids=(geometry_ids[index],),

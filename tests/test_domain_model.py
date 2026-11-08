@@ -123,3 +123,68 @@ def test_calculation_result_must_reference_captured_input_objects() -> None:
     report = ModelValidator().validate(invalid_model)
 
     assert any(issue.code == "result_source_not_captured" for issue in report.issues)
+
+def test_network_rejects_incompatible_connector_domains() -> None:
+    from mechpro.domain.enums import ConnectorDomain
+
+    model = create_natural_gas_reference_model()
+    first_pipe = model.objects[1]
+    incompatible_inlet = first_pipe.connectors[0].model_copy(
+        update={"domain": ConnectorDomain.AIR}
+    )
+    updated_pipe = first_pipe.model_copy(
+        update={"connectors": (incompatible_inlet, *first_pipe.connectors[1:])}
+    )
+    invalid_objects = (model.objects[0], updated_pipe, *model.objects[2:])
+    invalid_model = model.model_copy(update={"objects": invalid_objects})
+
+    report = ModelValidator().validate(invalid_model)
+
+    assert any(issue.code == "connection_domain_mismatch" for issue in report.issues)
+
+
+def test_network_rejects_connection_direction_mismatch() -> None:
+    model = create_natural_gas_reference_model()
+    first_connection = model.connections[0]
+    first_pipe = model.objects[1]
+    gas_source = model.objects[0]
+    reversed_endpoints = first_connection.model_copy(
+        update={
+            "from_endpoint": first_connection.from_endpoint.model_copy(
+                update={
+                    "object_id": first_pipe.id,
+                    "connector_id": first_pipe.connectors[0].id,
+                }
+            ),
+            "to_endpoint": first_connection.to_endpoint.model_copy(
+                update={
+                    "object_id": gas_source.id,
+                    "connector_id": gas_source.connectors[0].id,
+                }
+            ),
+        }
+    )
+    invalid_model = model.model_copy(
+        update={"connections": (reversed_endpoints, *model.connections[1:])}
+    )
+
+    report = ModelValidator().validate(invalid_model)
+
+    assert any(issue.code == "connection_direction_mismatch" for issue in report.issues)
+
+
+def test_boq_requires_matching_mapping_version() -> None:
+    model = create_natural_gas_reference_model()
+    document = model.boq_documents[0]
+    invalid_item = document.items[0].model_copy(
+        update={"measurement_rule_version": "2"}
+    )
+    invalid_document = document.model_copy(update={"items": (invalid_item,)})
+    invalid_model = model.model_copy(update={"boq_documents": (invalid_document,)})
+
+    report = ModelValidator().validate(invalid_model)
+
+    assert any(
+        issue.code == "measurement_rule_version_mismatch"
+        for issue in report.issues
+    )

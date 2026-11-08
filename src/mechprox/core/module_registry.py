@@ -205,7 +205,7 @@ class ModuleRegistry:
             try:
                 provider = point.load()
                 spec = provider()
-            except Exception as exc:  # noqa: BLE001 - identify the package boundary
+            except Exception as exc:
                 raise ModuleRegistrationError(
                     f"Could not load module entry point '{module_id}': {exc}"
                 ) from exc
@@ -317,7 +317,7 @@ class ModuleHost:
             for spec in ordered_specs:
                 try:
                     instance = spec.factory()
-                except Exception as exc:  # noqa: BLE001 - retain module identity
+                except Exception as exc:
                     raise ModuleStartupError(
                         f"Module '{spec.manifest.module_id}' could not be created: {exc}"
                     ) from exc
@@ -327,7 +327,7 @@ class ModuleHost:
             for spec, instance in self._instances:
                 try:
                     instance.configure(self._context)
-                except Exception as exc:  # noqa: BLE001 - retain module identity
+                except Exception as exc:
                     raise ModuleStartupError(
                         f"Module '{spec.manifest.module_id}' configuration failed: {exc}"
                     ) from exc
@@ -340,7 +340,7 @@ class ModuleHost:
                 self._started.append((spec, instance))
                 try:
                     instance.start(self._context)
-                except Exception as exc:  # noqa: BLE001 - retain module identity
+                except Exception as exc:
                     raise ModuleStartupError(
                         f"Module '{spec.manifest.module_id}' startup failed: {exc}"
                     ) from exc
@@ -378,7 +378,7 @@ class ModuleHost:
         for spec, instance in reversed(self._started):
             try:
                 instance.stop(self._context)
-            except Exception as exc:  # noqa: BLE001 - continue stopping remaining modules
+            except Exception as exc:
                 failures.append((spec.manifest.module_id, exc))
                 self._context.logger.exception(
                     "Module '%s' failed during shutdown", spec.manifest.module_id

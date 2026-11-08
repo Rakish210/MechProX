@@ -78,6 +78,7 @@ def main() -> int:
     calculation_runner = CalculationRunner(
         create_default_calculation_engine_registry(),
         parameter_repository,
+        source_repository,
     )
     window = MainWindow(
         context,

@@ -41,7 +41,7 @@ The source/standard snapshot work is present in `main`. The separate `feature/tr
 
 ## 3. Current focus — Phase 0: Architecture baseline
 
-<badge>IN PROGRESS</badge>
+**Current status: In progress.**
 
 **Objective:** establish one accurate architecture and code baseline before adding another isolated feature.
 

@@ -72,6 +72,10 @@ class CalculationRunner:
                     for snapshot in input_snapshots
                 ],
                 "standard_reference_ids": [str(item) for item in standard_ids],
+                "standard_snapshots": [
+                    item.model_dump(mode="json")
+                    for item in context.standard_references
+                ],
             }
         )
         run = CalculationRun(
@@ -92,7 +96,7 @@ class CalculationRunner:
 
         try:
             output = engine.calculate(context)
-            self._validate_output(output, request, input_snapshots, standard_ids)
+            self._validate_output(output, input_snapshots, standard_ids)
             results = tuple(
                 CalculationResult(
                     calculation_run_id=run.id,
@@ -331,7 +335,6 @@ class CalculationRunner:
     @staticmethod
     def _validate_output(
         output: CalculationOutput,
-        request: CalculationRequest,
         snapshots: tuple[CalculationInputSnapshot, ...],
         standard_ids: tuple[UUID, ...],
     ) -> None:

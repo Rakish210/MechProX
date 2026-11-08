@@ -129,6 +129,7 @@ class EngineeringDataPage(QWidget):
         self._product_changed()
 
     def refresh(self) -> None:
+        self._load_catalogue()
         previous = self.project_combo.currentData()
         self.project_combo.blockSignals(True)
         self.project_combo.clear()

@@ -163,16 +163,11 @@ class CalculationRunner:
         project_repository: ProjectRepository,
     ) -> CalculationExecution:
         execution = self.run(model, request)
-        updated_model = model.model_copy(
-            update={
-                "calculation_runs": (*model.calculation_runs, execution.run),
-                "calculation_results": (
-                    *model.calculation_results,
-                    *execution.results,
-                ),
-            }
+        project_repository.append_calculation_execution(
+            request.project_id,
+            execution.run,
+            execution.results,
         )
-        project_repository.save(updated_model)
         return execution
 
     def _prepare_context(

@@ -40,4 +40,4 @@ The first CEDM version does not implement engineering equations, design rules, A
 
 ## Synthetic example
 
-`mechpro.domain.example.create_natural_gas_reference_model()` builds a non-design example with one building, one floor, two spaces, a gas supply source, three connected pipe segments, one gas appliance, source/geometry references, a demonstration calculation record, and separate BOM and BOQ examples. The synthetic quantities and identifiers are not design values or public poz entries.
+`mechprox.domain.example.create_natural_gas_reference_model()` builds a non-design example with one building, one floor, two spaces, a gas supply source, three connected pipe segments, one gas appliance, source/geometry references, a demonstration calculation record, and separate BOM and BOQ examples. The synthetic quantities and identifiers are not design values or public poz entries.

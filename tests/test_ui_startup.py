@@ -6,14 +6,14 @@ from PySide6.QtWidgets import QApplication
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.calculations.runner import CalculationRunner
-from mechpro.core.context import AppContext
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
-from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
-from mechpro.data.project_repository import ProjectRepository
-from mechpro.engines.registry import create_default_calculation_engine_registry
-from mechpro.ui.main_window import MainWindow
+from mechprox.calculations.runner import CalculationRunner
+from mechprox.core.context import AppContext
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
+from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
+from mechprox.data.project_repository import ProjectRepository
+from mechprox.engines.registry import create_default_calculation_engine_registry
+from mechprox.ui.main_window import MainWindow
 
 
 def test_main_window_can_be_created_and_shown(tmp_path) -> None:

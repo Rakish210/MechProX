@@ -5,26 +5,26 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.calculations import CalculationEngineRegistry, CalculationRequest, CalculationRunner
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
-from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
-from mechpro.data.project_repository import ProjectRepository
-from mechpro.domain.base import EngineeringProperty, Quantity, QuantityValue
-from mechpro.domain.engineering import Equipment
-from mechpro.domain.enums import (
+from mechprox.calculations import CalculationEngineRegistry, CalculationRequest, CalculationRunner
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
+from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
+from mechprox.data.project_repository import ProjectRepository
+from mechprox.domain.base import EngineeringProperty, Quantity, QuantityValue
+from mechprox.domain.engineering import Equipment
+from mechprox.domain.enums import (
     CalculationPurpose,
     CalculationState,
     InformationOrigin,
 )
-from mechpro.domain.example import create_natural_gas_reference_model
-from mechpro.domain.parameters import (
+from mechprox.domain.example import create_natural_gas_reference_model
+from mechprox.domain.parameters import (
     ParameterDefinition,
     ParameterRevision,
     ParameterRevisionStatus,
     ParameterValueKind,
 )
-from mechpro.engines.gas.demand import GasApplianceDemandEngine
+from mechprox.engines.gas.demand import GasApplianceDemandEngine
 
 
 @pytest.fixture
@@ -175,7 +175,7 @@ def test_gas_engine_rejects_missing_appliance_power(gas_services) -> None:
 
 
 def test_default_registry_includes_gas_appliance_demand() -> None:
-    from mechpro.engines import create_default_calculation_engine_registry
+    from mechprox.engines import create_default_calculation_engine_registry
 
     registry = create_default_calculation_engine_registry()
     engine = registry.get("GAS.APPLIANCE_DEMAND", "1.0.0")

@@ -23,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-mechprox = "mechpro.app:main"
+mechprox = "mechprox.app:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

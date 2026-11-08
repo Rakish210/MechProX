@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.calculations import (
+from mechprox.calculations import (
     CalculationContext,
     CalculationEngineRegistry,
     CalculationOutput,
@@ -13,27 +13,27 @@ from mechpro.calculations import (
     CalculationResultDraft,
     CalculationRunner,
 )
-from mechpro.calculations.runner import CalculationPreconditionError
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
-from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
-from mechpro.data.project_repository import CalculationAppendError, ProjectRepository
-from mechpro.domain.base import Quantity, QuantityValue, ScalarValue
-from mechpro.domain.engineering import LinearElement
-from mechpro.domain.enums import (
+from mechprox.calculations.runner import CalculationPreconditionError
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
+from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
+from mechprox.data.project_repository import CalculationAppendError, ProjectRepository
+from mechprox.domain.base import Quantity, QuantityValue, ScalarValue
+from mechprox.domain.engineering import LinearElement
+from mechprox.domain.enums import (
     CalculationPurpose,
     CalculationState,
     InformationOrigin,
 )
-from mechpro.domain.example import create_natural_gas_reference_model
-from mechpro.domain.model import EngineeringModel
-from mechpro.domain.parameters import (
+from mechprox.domain.example import create_natural_gas_reference_model
+from mechprox.domain.model import EngineeringModel
+from mechprox.domain.parameters import (
     ParameterDefinition,
     ParameterRevision,
     ParameterRevisionStatus,
     ParameterValueKind,
 )
-from mechpro.domain.validation import ModelValidator
+from mechprox.domain.validation import ModelValidator
 
 
 class TotalLengthTestEngine:

@@ -5,33 +5,33 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.calculations import (
+from mechprox.calculations import (
     CalculationEngineRegistry,
     CalculationRequest,
     CalculationRunner,
 )
-from mechpro.data import models  # noqa: F401
-from mechpro.data.db import Base
-from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
-from mechpro.data.project_repository import ProjectRepository
-from mechpro.domain.base import Quantity, QuantityValue
-from mechpro.domain.engineering import Equipment
-from mechpro.domain.enums import (
+from mechprox.data import models  # noqa: F401
+from mechprox.data.db import Base
+from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
+from mechprox.data.project_repository import ProjectRepository
+from mechprox.domain.base import Quantity, QuantityValue
+from mechprox.domain.engineering import Equipment
+from mechprox.domain.enums import (
     CalculationPurpose,
     CalculationState,
     InformationOrigin,
     RevisionState,
 )
-from mechpro.domain.example import create_natural_gas_reference_model
-from mechpro.domain.parameters import (
+from mechprox.domain.example import create_natural_gas_reference_model
+from mechprox.domain.parameters import (
     ParameterDefinition,
     ParameterRevision,
     ParameterRevisionStatus,
     ParameterValueKind,
 )
-from mechpro.domain.validation import ModelValidator
-from mechpro.engines.gas.demand import GasApplianceDemandEngine
-from mechpro.engines.gas.workflow import GasApplianceInputError, add_gas_appliance
+from mechprox.domain.validation import ModelValidator
+from mechprox.engines.gas.demand import GasApplianceDemandEngine
+from mechprox.engines.gas.workflow import GasApplianceInputError, add_gas_appliance
 
 
 def test_add_gas_appliance_creates_typed_revision_controlled_object() -> None:

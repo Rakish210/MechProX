@@ -1,8 +1,8 @@
 import tempfile
 from pathlib import Path
 
-from mechpro.data import models  # noqa
-from mechpro.data.db import Base, create_engine_sqlite
+from mechprox.data import models  # noqa
+from mechprox.data.db import Base, create_engine_sqlite
 
 
 def test_db_create():

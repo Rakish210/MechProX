@@ -318,4 +318,4 @@ def test_run_and_save_rejects_calculation_when_an_input_object_changed(
 
     restored = project_repository.get(model.project.id)
     assert restored.objects == changed_objects
-    assert restored.calculation_runs == ()
+    assert restored.calculation_runs == latest_model.calculation_runs

@@ -31,6 +31,8 @@ class SourceRegistryRepository:
         self._session_factory = session_factory
 
     def register_source(self, source: SourceReference) -> SourceReference:
+        if not (source.uri or source.document_name):
+            raise ValueError("A source reference requires a document name or URI.")
         record = SourceReferenceRecord(
             id=str(source.id),
             source_kind=source.source_kind.value,
@@ -48,6 +50,8 @@ class SourceRegistryRepository:
         return source
 
     def register_standard(self, standard: StandardReference) -> StandardReference:
+        if not all((standard.standard_code.strip(), standard.title.strip(), standard.edition.strip())):
+            raise ValueError("A standard reference requires a code, title and edition.")
         with self._session_factory.begin() as session:
             if standard.source_reference_id is not None and session.get(
                 SourceReferenceRecord, str(standard.source_reference_id)

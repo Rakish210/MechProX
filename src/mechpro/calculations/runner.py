@@ -1,11 +1,12 @@
 import hashlib
 import json
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from mechpro.calculations.contracts import (
     CalculationContext,
     CalculationExecution,
+    CalculationOutput,
     CalculationRequest,
 )
 from mechpro.calculations.registry import CalculationEngineRegistry
@@ -64,7 +65,6 @@ class CalculationRunner:
                 "standard_reference_ids": [str(item) for item in standard_ids],
             }
         )
-        started_at = datetime.now(UTC)
         run = CalculationRun(
             id=uuid4(),
             project_id=model.project.id,
@@ -74,7 +74,7 @@ class CalculationRunner:
             engine_version=engine.engine_version,
             purpose=request.purpose,
             state=CalculationState.RUNNING,
-            started_at=started_at,
+            started_at=datetime.now(UTC),
             input_snapshots=input_snapshots,
             standard_reference_ids=standard_ids,
             input_hash=input_hash,
@@ -169,7 +169,7 @@ class CalculationRunner:
     ) -> tuple[
         CalculationContext,
         tuple[CalculationInputSnapshot, ...],
-        tuple,
+        tuple[UUID, ...],
     ]:
         if request.project_id != model.project.id:
             raise CalculationPreconditionError(
@@ -238,7 +238,7 @@ class CalculationRunner:
                     f"Calculation standard reference '{standard_id}' is not in the project model."
                 )
 
-        source_ids: set = set()
+        source_ids: set[UUID] = set()
         for item in selected_objects:
             source_ids.update(item.source_reference_ids)
             for prop in item.properties:
@@ -264,7 +264,7 @@ class CalculationRunner:
         )
         snapshots: list[CalculationInputSnapshot] = []
         for item in selected_objects:
-            item_source_ids = set(item.source_reference_ids)
+            item_source_ids: set[UUID] = set(item.source_reference_ids)
             for prop in item.properties:
                 item_source_ids.update(prop.source_reference_ids)
             item_source_ids.update(
@@ -297,7 +297,9 @@ class CalculationRunner:
                 )
             )
 
-        standards = tuple(standard_by_id[item] for item in used_standard_ids)
+        standards: tuple[StandardReference, ...] = tuple(
+            standard_by_id[item] for item in used_standard_ids
+        )
         context = CalculationContext(
             model=model,
             request=request,
@@ -309,10 +311,10 @@ class CalculationRunner:
 
     @staticmethod
     def _validate_output(
-        output,
+        output: CalculationOutput,
         request: CalculationRequest,
         snapshots: tuple[CalculationInputSnapshot, ...],
-        standard_ids: tuple,
+        standard_ids: tuple[UUID, ...],
     ) -> None:
         if len({item.result_code for item in output.results}) != len(output.results):
             raise CalculationEngineContractError("Calculation result codes must be unique.")

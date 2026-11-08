@@ -1,11 +1,12 @@
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from mechpro.data.db import Base
 from mechpro.data import models  # noqa: F401
+from mechpro.data.db import Base
 from mechpro.data.project_repository import (
     ProjectAlreadyExistsError,
     ProjectNotFoundError,
@@ -47,7 +48,20 @@ def test_duplicate_project_code_is_rejected(repository: ProjectRepository) -> No
 
 
 def test_missing_project_restore_is_explicit(repository: ProjectRepository) -> None:
-    from uuid import uuid4
-
     with pytest.raises(ProjectNotFoundError):
         repository.get(uuid4())
+
+
+def test_project_snapshot_can_be_updated(repository: ProjectRepository) -> None:
+    original = EngineeringModel(
+        project=Project(project_code="SAVE-001", name="Original name")
+    )
+    repository.create(original)
+    revised = original.model_copy(
+        update={"project": original.project.model_copy(update={"name": "Revised name"})}
+    )
+
+    summary = repository.save(revised)
+
+    assert summary.name == "Revised name"
+    assert repository.get(original.project.id).project.name == "Revised name"

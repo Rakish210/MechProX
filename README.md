@@ -13,6 +13,8 @@ MechProX is a Python-first desktop engineering platform. It coordinates one trac
 - Unit-aware quantities using an offline Pint registry.
 - Versioned Parameter Registry with immutable revisions, approval state, source traceability, validity windows and project/jurisdiction/global resolution.
 - Global source-document and standard-reference registry with edition, jurisdiction, clause, effective dates, content hashes and source-document links.
+- Parameter definitions and revisions can bind registered source documents and standard clauses; repository writes validate all references.
+- Calculation runs resolve those global references, embed immutable source/standard snapshots, include them in the input hash and persist them into the project model.
 - Parameter Registry UI for creating definitions, adding revisions and reviewing revision history.
 - Deterministic calculation execution framework with engine registry, declared input context, immutable object/parameter/standard snapshots, reproducible hashes and persisted run outcomes.
 - First desktop engineering workflow: add revision-controlled gas appliances and calculate reference volumetric demand using an approved, user-supplied LHV parameter.
@@ -23,7 +25,7 @@ MechProX is a Python-first desktop engineering platform. It coordinates one trac
 - Atomic takeoff persistence with stale-project protection and BOQ cost totals grouped by currency.
 - Ruff, Pyright, Pytest and Alembic migration workflow.
 
-The current desktop vertical slice supports project creation and local persistence, parameter management, source/standard reference registration, the first gas appliance demand method, product/poz catalogue management, project engineering-object entry, and BOM/BOQ generation for explicitly assigned products and supported measurement rules. The lower heating value must be entered and approved in Parameter Registry before gas demand calculation. Area-, volume- and weight-based takeoff rules, source-document/standard library workflows, advanced BOQ pricing and export, gas pipe-network sizing and pressure-loss calculations, and CAD/BIM operations remain under development.
+The current desktop vertical slice supports project creation and local persistence, parameter management, source/standard reference registration and parameter provenance binding, the first gas appliance demand method, product/poz catalogue management, project engineering-object entry, and BOM/BOQ generation for explicitly assigned products and supported measurement rules. The lower heating value must be entered and approved in Parameter Registry before gas demand calculation. Area-, volume- and weight-based takeoff rules, source-document/standard library workflows, advanced BOQ pricing and export, gas pipe-network sizing and pressure-loss calculations, and CAD/BIM operations remain under development.
 
 ## Technology baseline
 

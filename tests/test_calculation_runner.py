@@ -305,7 +305,7 @@ def test_run_and_save_rejects_calculation_when_an_input_object_changed(
     model, project_repository, runner = model_and_runner
     first_pipe = next(item for item in model.objects if isinstance(item, LinearElement))
     changed_pipe = first_pipe.model_copy(
-        update={"length": Quantity(value=Decimal("99"), unit_code="meter")}
+        update={"length": Quantity(value=Decimal(99), unit_code="meter")}
     )
     changed_objects = tuple(
         changed_pipe if item.id == first_pipe.id else item for item in model.objects

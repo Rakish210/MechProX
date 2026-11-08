@@ -12,6 +12,7 @@ from mechpro.calculations.contracts import (
 from mechpro.calculations.registry import CalculationEngineRegistry
 from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
+from mechpro.domain.base import StandardReference
 from mechpro.domain.calculations import (
     CalculationInputSnapshot,
     CalculationResult,

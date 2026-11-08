@@ -25,20 +25,27 @@ from mechprox.domain.commercial import PositionProductMapping, PositionReference
 from mechprox.domain.enums import InformationOrigin
 
 
+def _required(value: str, label: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError(f"{label} alanı zorunludur.")
+    return cleaned
+
+
 class _CatalogueDialog(QDialog):
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumWidth(480)
-        self.layout = QVBoxLayout(self)
+        root_layout = QVBoxLayout(self)
         self.form = QFormLayout()
-        self.layout.addLayout(self.form)
+        root_layout.addLayout(self.form)
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self._validate)
         buttons.rejected.connect(self.reject)
-        self.layout.addWidget(buttons)
+        root_layout.addWidget(buttons)
 
     def _validate(self) -> None:
         try:
@@ -67,11 +74,11 @@ class NewProductDialog(_CatalogueDialog):
 
     def build(self) -> ProductReference:
         return ProductReference(
-            catalogue_code=self.catalogue.text().strip(),
-            product_code=self.code.text().strip(),
-            name=self.name.text().strip(),
-            category_code=self.category.text().strip(),
-            unit_code=self.unit.text().strip(),
+            catalogue_code=_required(self.catalogue.text(), "Katalog kodu"),
+            product_code=_required(self.code.text(), "Ürün kodu"),
+            name=_required(self.name.text(), "Ürün adı"),
+            category_code=_required(self.category.text(), "Kategori kodu"),
+            unit_code=_required(self.unit.text(), "Birim kodu"),
             manufacturer=self.manufacturer.text().strip() or None,
             origin=InformationOrigin.USER_INPUT,
         )
@@ -102,10 +109,10 @@ class NewPositionDialog(_CatalogueDialog):
         if price is not None and not price.is_finite():
             raise ValueError("Birim fiyat sonlu bir sayı olmalıdır.")
         return PositionReference(
-            catalogue_code=self.catalogue.text().strip(),
-            position_code=self.code.text().strip(),
-            name=self.name.text().strip(),
-            unit_code=self.unit.text().strip(),
+            catalogue_code=_required(self.catalogue.text(), "Poz kataloğu"),
+            position_code=_required(self.code.text(), "Poz numarası"),
+            name=_required(self.name.text(), "Poz açıklaması"),
+            unit_code=_required(self.unit.text(), "Birim kodu"),
             jurisdiction=self.jurisdiction.text().strip() or None,
             unit_price=price,
             currency_code=self.currency.currentText() if price is not None else None,
@@ -146,8 +153,8 @@ class NewMappingDialog(_CatalogueDialog):
         return PositionProductMapping(
             position_reference_id=UUID(str(position_id)),
             product_reference_id=UUID(str(product_id)),
-            mapping_code=self.code.text().strip(),
-            mapping_version=self.version.text().strip(),
+            mapping_code=_required(self.code.text(), "Eşleştirme kodu"),
+            mapping_version=_required(self.version.text(), "Eşleştirme revizyonu"),
             measurement_rule_code=self.rule.currentText(),
         )
 

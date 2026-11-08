@@ -17,7 +17,7 @@ from mechpro.calculations.runner import CalculationPreconditionError
 from mechpro.data import models  # noqa: F401
 from mechpro.data.db import Base
 from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
-from mechpro.data.project_repository import ProjectRepository
+from mechpro.data.project_repository import CalculationAppendError, ProjectRepository
 from mechpro.domain.base import Quantity, QuantityValue, ScalarValue
 from mechpro.domain.engineering import LinearElement
 from mechpro.domain.enums import (
@@ -296,3 +296,26 @@ def test_run_and_save_preserves_project_edits_made_after_calculation_input_was_l
     assert restored.project.description == "Edited while calculation was being prepared."
     assert restored.calculation_runs[-1].id == execution.run.id
     assert restored.calculation_results[-1].calculation_run_id == execution.run.id
+
+
+
+def test_run_and_save_rejects_calculation_when_an_input_object_changed(
+    model_and_runner,
+) -> None:
+    model, project_repository, runner = model_and_runner
+    first_pipe = next(item for item in model.objects if isinstance(item, LinearElement))
+    changed_pipe = first_pipe.model_copy(
+        update={"length": Quantity(value=Decimal("99"), unit_code="meter")}
+    )
+    changed_objects = tuple(
+        changed_pipe if item.id == first_pipe.id else item for item in model.objects
+    )
+    latest_model = model.model_copy(update={"objects": changed_objects})
+    project_repository.save(latest_model)
+
+    with pytest.raises(CalculationAppendError, match="changed after the run inputs"):
+        runner.run_and_save(model, _request(model), project_repository)
+
+    restored = project_repository.get(model.project.id)
+    assert restored.objects == changed_objects
+    assert restored.calculation_runs == ()

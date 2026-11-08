@@ -1,47 +1,37 @@
 from __future__ import annotations
 
-import logging
-import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from importlib.metadata import EntryPoint, entry_points
-from typing import Any, Protocol
+from importlib.metadata import entry_points
+from typing import Protocol
+
+from PySide6.QtWidgets import QWidget
 
 from mechprox.core.context import AppContext
 
 
-MODULE_ENTRY_POINT_GROUP = "mechprox.modules"
 PLATFORM_MODULE_API_VERSION = 1
-_MODULE_ID_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]*$")
-_PAGE_ID_PATTERN = re.compile(r"^[a-z][a-z0-9_-]*$")
+MODULE_ENTRY_POINT_GROUP = "mechprox.modules"
 
 
 class ModuleError(RuntimeError):
-    """Base exception for module discovery, validation and lifecycle failures."""
+    """Base error for module registration and lifecycle failures."""
 
 
 class ModuleRegistrationError(ModuleError, ValueError):
-    """Raised when a module manifest is invalid or conflicts with the host."""
+    """A module manifest or registration is invalid."""
 
 
 class ModuleDependencyError(ModuleRegistrationError):
-    """Raised when a module dependency cannot be satisfied."""
+    """A declared module dependency cannot be satisfied."""
 
 
 class ModuleDependencyCycleError(ModuleDependencyError):
-    """Raised when module dependencies contain a cycle."""
+    """The registered module dependency graph contains a cycle."""
 
 
-class ModuleStartupError(ModuleError):
-    """Raised when a module fails to configure or start."""
-
-
-class ModuleShutdownError(ModuleError):
-    """Raised after shutdown when one or more modules fail to stop."""
-
-
-class ModuleHostNotStartedError(ModuleError):
-    """Raised when module pages are requested before the host starts."""
+class ModuleLifecycleError(ModuleError):
+    """A module failed while configuring, starting, rendering or stopping."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,100 +42,67 @@ class ModuleManifest:
     api_version: int = PLATFORM_MODULE_API_VERSION
     dependencies: tuple[str, ...] = ()
     capabilities: tuple[str, ...] = ()
+    description: str = ""
+    navigation_order: int = 100
 
     def __post_init__(self) -> None:
-        if self.module_id != self.module_id.strip() or not _MODULE_ID_PATTERN.fullmatch(self.module_id):
+        module_id = self.module_id.strip()
+        if not module_id or any(ch not in "abcdefghijklmnopqrstuvwxyz0123456789._-" for ch in module_id):
             raise ModuleRegistrationError(
-                "Module IDs must start with a lowercase letter and contain only "
-                "lowercase letters, digits, dots, underscores or hyphens."
+                "Module IDs may contain lowercase letters, digits, dots, underscores and hyphens."
             )
-        if not self.title.strip() or not self.version.strip():
-            raise ModuleRegistrationError("Module title and version are required.")
+        if not module_id[0].isalpha():
+            raise ModuleRegistrationError("A module ID must start with a lowercase letter.")
+        if not self.title.strip():
+            raise ModuleRegistrationError("A module title is required.")
+        if not self.version.strip():
+            raise ModuleRegistrationError("A module version is required.")
         if self.api_version < 1:
             raise ModuleRegistrationError("Module API version must be positive.")
         if len(set(self.dependencies)) != len(self.dependencies):
-            raise ModuleRegistrationError(
-                f"Module '{self.module_id}' declares duplicate dependencies."
-            )
-        if self.module_id in self.dependencies:
-            raise ModuleRegistrationError(
-                f"Module '{self.module_id}' cannot depend on itself."
-            )
+            raise ModuleRegistrationError(f"Module '{module_id}' has duplicate dependencies.")
+        if module_id in self.dependencies:
+            raise ModuleRegistrationError(f"Module '{module_id}' cannot depend on itself.")
+        if len(set(self.capabilities)) != len(self.capabilities):
+            raise ModuleRegistrationError(f"Module '{module_id}' has duplicate capabilities.")
         if any(not item.strip() for item in (*self.dependencies, *self.capabilities)):
             raise ModuleRegistrationError(
-                f"Module '{self.module_id}' has an empty dependency or capability."
-            )
-        if len(set(self.capabilities)) != len(self.capabilities):
-            raise ModuleRegistrationError(
-                f"Module '{self.module_id}' declares duplicate capabilities."
+                f"Module '{module_id}' has an empty dependency or capability."
             )
 
 
-@dataclass(frozen=True, slots=True)
-class ModulePageSpec:
-    page_id: str
-    title: str
-    factory: Callable[[AppContext], Any]
-    order: int = 100
+class PlatformModule(Protocol):
+    """Public lifecycle contract implemented by every first-party or installed module."""
 
-    def __post_init__(self) -> None:
-        if self.page_id != self.page_id.strip() or not _PAGE_ID_PATTERN.fullmatch(self.page_id):
-            raise ModuleRegistrationError(
-                "Page IDs must start with a lowercase letter and contain only "
-                "lowercase letters, digits, hyphens or underscores."
-            )
-        if not self.title.strip():
-            raise ModuleRegistrationError(
-                f"Module page '{self.page_id}' requires a title."
-            )
+    def configure(self, context: AppContext) -> None:
+        """Register services and integrations before the host freezes the service registry."""
+
+    def start(self, context: AppContext) -> None:
+        """Start resources after every module has been configured."""
+
+    def create_widget(self, context: AppContext) -> QWidget:
+        """Create the module's desktop workspace."""
+
+    def on_activated(self, context: AppContext, widget: QWidget) -> None:
+        """Refresh or prepare the workspace when the user opens it."""
+
+    def stop(self, context: AppContext) -> None:
+        """Release resources in reverse dependency order."""
 
 
 @dataclass(frozen=True, slots=True)
 class ModuleSpec:
     manifest: ModuleManifest
     factory: Callable[[], PlatformModule]
-    pages: tuple[ModulePageSpec, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class RegisteredModulePage:
-    module_id: str
-    page_id: str
-    title: str
-    factory: Callable[[AppContext], Any]
-    order: int
-
-    @property
-    def key(self) -> str:
-        return f"{self.module_id}.{self.page_id}"
-
-
-class PlatformModule(Protocol):
-    """Lifecycle contract implemented by built-in and third-party modules."""
-
-    def configure(self, context: AppContext) -> None:
-        """Register services and integrations. Called before any module starts."""
-
-    def start(self, context: AppContext) -> None:
-        """Start module resources after every module has been configured."""
-
-    def stop(self, context: AppContext) -> None:
-        """Release resources during orderly application shutdown."""
 
 
 class ModuleRegistry:
-    """Validates module manifests and resolves a deterministic dependency order."""
+    """Module catalogue with API compatibility and dependency validation."""
 
-    def __init__(
-        self,
-        *,
-        api_version: int = PLATFORM_MODULE_API_VERSION,
-        entry_point_group: str = MODULE_ENTRY_POINT_GROUP,
-    ) -> None:
+    def __init__(self, *, api_version: int = PLATFORM_MODULE_API_VERSION) -> None:
         if api_version < 1:
             raise ValueError("Platform module API version must be positive.")
         self._api_version = api_version
-        self._entry_point_group = entry_point_group
         self._modules: dict[str, ModuleSpec] = {}
 
     def register(self, spec: ModuleSpec) -> None:
@@ -153,68 +110,71 @@ class ModuleRegistry:
         if manifest.api_version != self._api_version:
             raise ModuleRegistrationError(
                 f"Module '{manifest.module_id}' requires API {manifest.api_version}; "
-                f"host API is {self._api_version}."
+                f"host provides API {self._api_version}."
             )
         if manifest.module_id in self._modules:
             raise ModuleRegistrationError(
                 f"Module '{manifest.module_id}' is already registered."
             )
-        page_ids = [page.page_id for page in spec.pages]
-        if len(page_ids) != len(set(page_ids)):
-            raise ModuleRegistrationError(
-                f"Module '{manifest.module_id}' declares duplicate page IDs."
-            )
         self._modules[manifest.module_id] = spec
 
-    def discover_entry_points(
-        self,
-        discovered: Iterable[EntryPoint] | None = None,
-    ) -> tuple[str, ...]:
-        """Load installed Python packages exposing the MechProX module entry-point group.
+    def load_entry_points(self, enabled_module_ids: Iterable[str]) -> tuple[str, ...]:
+        """Load explicitly enabled, trusted Python packages registered as MechProX modules.
 
-        Third-party modules can be installed as normal Python distributions and
-        declare an entry point that resolves to a zero-argument function returning
-        one ModuleSpec. The host API version is checked before a module is started.
+        Third-party modules execute Python code in the application process. Only
+        install and enable packages from trusted sources.
         """
-        if discovered is None:
-            discovered = entry_points().select(group=self._entry_point_group)
-
+        enabled = set(enabled_module_ids)
         loaded: list[str] = []
-        for entry_point in sorted(discovered, key=lambda item: item.name):
+        available = {point.name: point for point in entry_points(group=MODULE_ENTRY_POINT_GROUP)}
+        unknown = enabled - set(available)
+        if unknown:
+            raise ModuleRegistrationError(
+                "Enabled module entry points are not installed: " + ", ".join(sorted(unknown))
+            )
+        for module_id in sorted(enabled):
+            point = available[module_id]
             try:
-                provider = entry_point.load()
-                spec = provider()
-            except Exception as exc:  # noqa: BLE001 - identify the failed extension
+                factory = point.load()
+                spec = factory()
+            except Exception as exc:  # noqa: BLE001 - isolate plugin import boundary
                 raise ModuleRegistrationError(
-                    f"Could not load module entry point '{entry_point.name}': {exc}"
+                    f"Could not load installed module '{module_id}': {exc}"
                 ) from exc
             if not isinstance(spec, ModuleSpec):
                 raise ModuleRegistrationError(
-                    f"Entry point '{entry_point.name}' must return a ModuleSpec."
+                    f"Entry point '{module_id}' must return a ModuleSpec."
+                )
+            if spec.manifest.module_id != module_id:
+                raise ModuleRegistrationError(
+                    f"Entry point '{module_id}' returned module "
+                    f"'{spec.manifest.module_id}'."
                 )
             self.register(spec)
-            loaded.append(spec.manifest.module_id)
+            loaded.append(module_id)
         return tuple(loaded)
 
     def get(self, module_id: str) -> ModuleSpec:
         try:
             return self._modules[module_id]
         except KeyError as exc:
-            raise ModuleRegistrationError(
-                f"Module '{module_id}' is not registered."
-            ) from exc
+            raise ModuleRegistrationError(f"Module '{module_id}' is not registered.") from exc
 
     def all(self) -> tuple[ModuleSpec, ...]:
-        return tuple(self._modules.values())
+        return tuple(
+            sorted(
+                self._modules.values(),
+                key=lambda spec: (spec.manifest.navigation_order, spec.manifest.module_id),
+            )
+        )
 
     def startup_order(self) -> tuple[ModuleSpec, ...]:
-        """Return a stable topological order with dependencies before dependants."""
         for spec in self._modules.values():
             for dependency in spec.manifest.dependencies:
                 if dependency not in self._modules:
                     raise ModuleDependencyError(
-                        f"Module '{spec.manifest.module_id}' requires missing "
-                        f"module '{dependency}'."
+                        f"Module '{spec.manifest.module_id}' requires missing module "
+                        f"'{dependency}'."
                     )
 
         ordered: list[ModuleSpec] = []
@@ -226,126 +186,136 @@ class ModuleRegistry:
                 return
             if module_id in visiting:
                 cycle = " -> ".join((*visiting, module_id))
-                raise ModuleDependencyCycleError(
-                    f"Module dependency cycle detected: {cycle}."
-                )
+                raise ModuleDependencyCycleError(f"Module dependency cycle: {cycle}.")
             visiting.append(module_id)
-            for dependency in self._modules[module_id].manifest.dependencies:
+            spec = self._modules[module_id]
+            for dependency in spec.manifest.dependencies:
                 visit(dependency)
             visiting.pop()
             visited.add(module_id)
-            ordered.append(self._modules[module_id])
+            ordered.append(spec)
 
-        for module_id in self._modules:
+        for module_id in sorted(self._modules):
             visit(module_id)
         return tuple(ordered)
 
-    def page_specs(self) -> tuple[RegisteredModulePage, ...]:
-        pages: list[RegisteredModulePage] = []
-        seen: set[str] = set()
-        for module in self.startup_order():
-            module_id = module.manifest.module_id
-            for page in module.pages:
-                registered = RegisteredModulePage(
-                    module_id=module_id,
-                    page_id=page.page_id,
-                    title=page.title,
-                    factory=page.factory,
-                    order=page.order,
-                )
-                if registered.key in seen:
-                    raise ModuleRegistrationError(
-                        f"Navigation page '{registered.key}' is registered more than once."
-                    )
-                seen.add(registered.key)
-                pages.append(registered)
-        return tuple(sorted(pages, key=lambda item: (item.order, item.module_id, item.page_id)))
+    def providers(self, capability: str) -> tuple[ModuleSpec, ...]:
+        return tuple(spec for spec in self.all() if capability in spec.manifest.capabilities)
 
 
 class ModuleHost:
-    """Owns module instances and guarantees ordered startup and reverse shutdown."""
+    """Runs module lifecycles and creates their desktop workspaces on demand."""
 
     def __init__(self, registry: ModuleRegistry, context: AppContext) -> None:
-        self._registry = registry
-        self._context = context
-        self._instances: list[tuple[ModuleSpec, PlatformModule]] = []
-        self._started: list[tuple[ModuleSpec, PlatformModule]] = []
+        self.registry = registry
+        self.context = context
+        self._instances: dict[str, PlatformModule] = {}
+        self._started: list[str] = []
+        self._widgets: dict[str, QWidget] = {}
         self._attempted = False
         self._stopped = False
 
-    @property
-    def started_module_ids(self) -> tuple[str, ...]:
-        return tuple(spec.manifest.module_id for spec, _ in self._started)
-
     def start(self) -> None:
         if self._attempted:
-            raise ModuleStartupError("A module host can only be started once.")
+            raise ModuleLifecycleError("A module host can only be started once.")
         self._attempted = True
-
+        ordered = self.registry.startup_order()
         try:
-            ordered_specs = self._registry.startup_order()
-            for spec in ordered_specs:
+            for spec in ordered:
                 try:
                     instance = spec.factory()
-                except Exception as exc:  # noqa: BLE001 - retain module identity
-                    raise ModuleStartupError(
-                        f"Module '{spec.manifest.module_id}' could not be created: {exc}"
+                except Exception as exc:  # noqa: BLE001 - module factory boundary
+                    raise ModuleLifecycleError(
+                        f"Module '{spec.manifest.module_id}' could not be constructed: {exc}"
                     ) from exc
-                self._instances.append((spec, instance))
+                self._validate_instance(spec.manifest.module_id, instance)
+                self._instances[spec.manifest.module_id] = instance
 
-            for spec, instance in self._instances:
+            for spec in ordered:
+                module_id = spec.manifest.module_id
                 try:
-                    instance.configure(self._context)
-                except Exception as exc:  # noqa: BLE001 - retain module identity
-                    raise ModuleStartupError(
-                        f"Module '{spec.manifest.module_id}' configuration failed: {exc}"
+                    self._instances[module_id].configure(self.context)
+                except Exception as exc:  # noqa: BLE001 - module boundary
+                    raise ModuleLifecycleError(
+                        f"Module '{module_id}' failed during configuration: {exc}"
                     ) from exc
 
-            self._context.services.freeze()
+            self.context.services.freeze()
 
-            for spec, instance in self._instances:
-                # Register before calling start so rollback also stops a module
-                # whose startup failed after acquiring only some resources.
-                self._started.append((spec, instance))
+            for spec in ordered:
+                module_id = spec.manifest.module_id
                 try:
-                    instance.start(self._context)
-                except Exception as exc:  # noqa: BLE001 - retain module identity
-                    raise ModuleStartupError(
-                        f"Module '{spec.manifest.module_id}' startup failed: {exc}"
+                    self._instances[module_id].start(self.context)
+                except Exception as exc:  # noqa: BLE001 - module boundary
+                    raise ModuleLifecycleError(
+                        f"Module '{module_id}' failed during startup: {exc}"
                     ) from exc
+                self._started.append(module_id)
         except Exception:
-            self._rollback_startup()
+            self._stop_started(suppress_errors=True)
             raise
 
-    def page_specs(self) -> tuple[RegisteredModulePage, ...]:
-        if not self._started and self._registry.all():
-            raise ModuleHostNotStartedError("Start the module host before building navigation.")
-        return self._registry.page_specs()
+    def manifests(self) -> tuple[ModuleManifest, ...]:
+        return tuple(spec.manifest for spec in self.registry.all())
+
+    def widget(self, module_id: str) -> QWidget:
+        if module_id not in self._started:
+            raise ModuleLifecycleError(
+                f"Module '{module_id}' is not started; call ModuleHost.start() first."
+            )
+        if module_id not in self._widgets:
+            try:
+                widget = self._instances[module_id].create_widget(self.context)
+            except Exception as exc:  # noqa: BLE001 - UI creation boundary
+                raise ModuleLifecycleError(
+                    f"Module '{module_id}' failed to create its workspace: {exc}"
+                ) from exc
+            if not isinstance(widget, QWidget):
+                raise ModuleLifecycleError(
+                    f"Module '{module_id}' did not return a QWidget workspace."
+                )
+            self._widgets[module_id] = widget
+        return self._widgets[module_id]
+
+    def activate(self, module_id: str) -> None:
+        widget = self.widget(module_id)
+        try:
+            self._instances[module_id].on_activated(self.context, widget)
+        except Exception as exc:  # noqa: BLE001 - module activation boundary
+            raise ModuleLifecycleError(
+                f"Module '{module_id}' failed while activating its workspace: {exc}"
+            ) from exc
 
     def stop(self) -> None:
         if self._stopped:
             return
         self._stopped = True
-        failures = self._stop_started()
+        failures = self._stop_started(suppress_errors=False)
         if failures:
-            details = "; ".join(
-                f"{module_id}: {error}" for module_id, error in failures
-            )
-            raise ModuleShutdownError(f"One or more modules failed to stop: {details}")
+            raise ModuleLifecycleError("; ".join(failures))
 
-    def _rollback_startup(self) -> None:
-        failures = self._stop_started()
-        for module_id, error in failures:
-            self._context.logger.error(
-                "Module '%s' failed during startup rollback: %s", module_id, error
-            )
-
-    def _stop_started(self) -> list[tuple[str, Exception]]:
-        failures: list[tuple[str, Exception]] = []
-        for spec, instance in reversed(self._started):
+    def _stop_started(self, *, suppress_errors: bool) -> list[str]:
+        failures: list[str] = []
+        for module_id in reversed(self._started):
             try:
-                instance.stop(self._context)
-            except Exception as exc:  # noqa: BLE001 - stop remaining modules regardless
-                failures.append((spec.manifest.module_id, exc))
+                self._instances[module_id].stop(self.context)
+            except Exception as exc:  # noqa: BLE001 - continue releasing remaining modules
+                failures.append(f"{module_id}: {exc}")
+                self.context.logger.exception("Module '%s' failed during shutdown", module_id)
         self._started.clear()
+        if failures and not suppress_errors:
+            return failures
         return failures
+
+    @staticmethod
+    def _validate_instance(module_id: str, instance: object) -> None:
+        required = ("configure", "start", "create_widget", "on_activated", "stop")
+        missing = [
+            member for member in required
+            if not callable(getattr(instance, member, None))
+        ]
+        if missing:
+            raise ModuleLifecycleError(
+                f"Module '{module_id}' does not implement required lifecycle methods: "
+                + ", ".join(missing)
+            )

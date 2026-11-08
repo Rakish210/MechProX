@@ -174,8 +174,16 @@ def test_host_configures_all_then_starts_and_stops_in_reverse_order() -> None:
     ]
     assert host.started_module_ids == ("workspace", "engineering")
     assert context.services.is_frozen
+    pending_registry = ModuleRegistry()
+    pending_registry.register(
+        _spec(
+            "pending",
+            RecordingModule,
+            pages=(ModulePageSpec("home", "Home", lambda ctx: object()),),
+        )
+    )
     with pytest.raises(ModuleHostNotStartedError):
-        ModuleHost(ModuleRegistry(), AppContext()).page_specs()  # empty host is valid
+        ModuleHost(pending_registry, AppContext()).page_specs()
 
     host.stop()
     assert events[-2:] == ["engineering.stop", "workspace.stop"]

@@ -265,3 +265,15 @@ def test_engine_registry_rejects_duplicate_method_revision() -> None:
 
     with pytest.raises(ValueError, match="already registered"):
         registry.register(TotalLengthTestEngine())
+
+
+
+def test_identical_inputs_produce_identical_hashes(model_and_runner) -> None:
+    model, _, runner = model_and_runner
+    request = _request(model)
+
+    first = runner.run(model, request)
+    second = runner.run(model, request)
+
+    assert first.run.input_hash == second.run.input_hash
+    assert first.run.output_hash == second.run.output_hash

@@ -1,11 +1,35 @@
+from datetime import date
 from decimal import Decimal
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from mechpro.calculations import (
+    CalculationEngineRegistry,
+    CalculationRequest,
+    CalculationRunner,
+)
+from mechpro.data import models  # noqa: F401
+from mechpro.data.db import Base
+from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
+from mechpro.data.project_repository import ProjectRepository
+from mechpro.domain.base import Quantity, QuantityValue
 from mechpro.domain.engineering import Equipment
-from mechpro.domain.enums import RevisionState
+from mechpro.domain.enums import (
+    CalculationPurpose,
+    CalculationState,
+    InformationOrigin,
+    RevisionState,
+)
 from mechpro.domain.example import create_natural_gas_reference_model
-from mechpro.domain.validation import ModelValidator
+from mechpro.domain.parameters import (
+    ParameterDefinition,
+    ParameterRevision,
+    ParameterRevisionStatus,
+    ParameterValueKind,
+)
+from mechpro.engines.gas.demand import GasApplianceDemandEngine
 from mechpro.engines.gas.workflow import GasApplianceInputError, add_gas_appliance
 
 
@@ -15,7 +39,7 @@ def test_add_gas_appliance_creates_typed_revision_controlled_object() -> None:
     updated = add_gas_appliance(
         model,
         name="Kitchen boiler",
-        thermal_input_power_kw=Decimal("60"),
+        thermal_input_power_kw=Decimal(60),
         changed_by="test-engineer",
     )
 
@@ -37,9 +61,9 @@ def test_add_gas_appliance_creates_typed_revision_controlled_object() -> None:
 @pytest.mark.parametrize(
     "name,power,changed_by",
     [
-        ("", Decimal("10"), "engineer"),
-        ("Boiler", Decimal("0"), "engineer"),
-        ("Boiler", Decimal("-1"), "engineer"),
+        ("", Decimal(10), "engineer"),
+        ("Boiler", Decimal(0), "engineer"),
+        ("Boiler", Decimal(-1), "engineer"),
         ("Boiler", Decimal("NaN"), "engineer"),
         ("Boiler", Decimal("10"), ""),
     ],
@@ -60,27 +84,6 @@ def test_add_gas_appliance_rejects_invalid_inputs(
         )
 
 def test_new_gas_appliance_can_run_through_the_calculation_framework(tmp_path) -> None:
-    from datetime import date
-
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    from mechpro.calculations import CalculationEngineRegistry, CalculationRequest, CalculationRunner
-    from mechpro.data import models  # noqa: F401
-    from mechpro.data.db import Base
-    from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
-    from mechpro.data.project_repository import ProjectRepository
-    from mechpro.domain.base import Quantity, QuantityValue
-    from mechpro.domain.enums import CalculationPurpose, CalculationState, InformationOrigin
-    from mechpro.domain.example import create_natural_gas_reference_model
-    from mechpro.domain.parameters import (
-        ParameterDefinition,
-        ParameterRevision,
-        ParameterRevisionStatus,
-        ParameterValueKind,
-    )
-    from mechpro.engines.gas.demand import GasApplianceDemandEngine
-
     engine = create_engine(f"sqlite:///{tmp_path / 'gas-workflow.db'}")
     Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, expire_on_commit=False)

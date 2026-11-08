@@ -47,6 +47,9 @@ class _CatalogueDialog(QDialog):
         buttons.rejected.connect(self.reject)
         root_layout.addWidget(buttons)
 
+    def build(self) -> ProductReference | PositionReference | PositionProductMapping:
+        raise NotImplementedError
+
     def _validate(self) -> None:
         try:
             self.build()

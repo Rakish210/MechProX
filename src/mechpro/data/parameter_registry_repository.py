@@ -168,7 +168,7 @@ class ParameterRegistryRepository:
                 )
             return
         if not isinstance(value, QuantityValue):
-            raise ValueError(
+            raise TypeError(
                 f"Parameter '{definition.code}' requires a unit-bearing quantity."
             )
         try:

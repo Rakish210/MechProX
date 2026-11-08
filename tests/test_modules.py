@@ -8,6 +8,7 @@ from mechprox.core.context import AppContext
 from mechprox.core.module_registry import (
     ModuleDependencyCycleError,
     ModuleDependencyError,
+    ModuleEntryPoint,
     ModuleHost,
     ModuleHostNotStartedError,
     ModuleManifest,
@@ -229,15 +230,17 @@ def test_discovery_loads_only_explicitly_enabled_entry_points() -> None:
     class FakeEntryPoint:
         name = "trusted-extension"
 
-        def load(self):
+        def load(self) -> object:
             events.append("loaded")
             return lambda: spec("trusted-extension", lambda: FakeModule("trusted-extension"))
 
     registry = ModuleRegistry()
-    assert registry.discover_entry_points(discovered=(FakeEntryPoint(),)) == ()
+    fake_entry_point = FakeEntryPoint()
+    discovered: tuple[ModuleEntryPoint, ...] = (fake_entry_point,)
+    assert registry.discover_entry_points(discovered=discovered) == ()
     assert events == []
 
     assert registry.discover_entry_points(
-        ("trusted-extension",), discovered=(FakeEntryPoint(),)
+        ("trusted-extension",), discovered=discovered
     ) == ("trusted-extension",)
     assert events == ["loaded"]

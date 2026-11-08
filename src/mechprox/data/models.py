@@ -137,3 +137,58 @@ class PositionProductMappingRecord(Base):
     mapping_version: Mapped[str] = mapped_column(String(80), nullable=False)
     model_json: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class SourceReferenceRecord(Base):
+    """Queryable index for an immutable source-document reference."""
+
+    __tablename__ = "source_references"
+    __table_args__ = (
+        Index(
+            "ix_source_references_identity",
+            "source_kind",
+            "document_name",
+            "document_revision",
+        ),
+        Index("ix_source_references_hash", "content_hash"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    source_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    document_name: Mapped[str | None] = mapped_column(String(240), nullable=True)
+    document_revision: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    uri: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    model_json: Mapped[str] = mapped_column(Text, nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class StandardReferenceRecord(Base):
+    """Indexed standard edition/clause linked to its source document."""
+
+    __tablename__ = "standard_references"
+    __table_args__ = (
+        UniqueConstraint(
+            "standard_code",
+            "edition",
+            "jurisdiction",
+            "clause",
+            name="uq_standard_reference_edition_clause",
+        ),
+        Index("ix_standard_references_code_edition", "standard_code", "edition"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    standard_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    edition: Mapped[str] = mapped_column(String(80), nullable=False)
+    jurisdiction: Mapped[str] = mapped_column(String(80), nullable=False, default="")
+    clause: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    source_reference_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("source_references.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
+    model_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

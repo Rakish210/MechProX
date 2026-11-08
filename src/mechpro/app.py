@@ -6,11 +6,13 @@ from alembic.config import Config
 from PySide6.QtWidgets import QApplication
 
 from alembic import command
+from mechpro.calculations.runner import CalculationRunner
 from mechpro.core.config import ConfigManager
 from mechpro.core.context import AppContext, configure_logging
 from mechpro.data.db import create_engine_sqlite, create_session_factory
 from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
+from mechpro.engines.registry import create_default_calculation_engine_registry
 from mechpro.ui.main_window import MainWindow
 
 
@@ -57,7 +59,16 @@ def main() -> int:
     config = ConfigManager(data_dir / "config.json")
     project_repository, parameter_repository = _initialize_database()
     context = AppContext(config=config.data, logger=logger)
-    window = MainWindow(context, project_repository, parameter_repository)
+    calculation_runner = CalculationRunner(
+        create_default_calculation_engine_registry(),
+        parameter_repository,
+    )
+    window = MainWindow(
+        context,
+        project_repository,
+        parameter_repository,
+        calculation_runner,
+    )
     window.show()
     logger.info("MechPro desktop application started")
     return app.exec()

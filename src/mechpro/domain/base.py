@@ -59,7 +59,7 @@ class Quantity(DomainModel):
 
 class ScalarValue(DomainModel):
     kind: Literal["scalar"] = "scalar"
-    value: str | int | float | bool | Decimal
+    value: Decimal | int | float | bool | str
 
 
 class QuantityValue(DomainModel):

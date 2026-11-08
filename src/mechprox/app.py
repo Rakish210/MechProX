@@ -9,6 +9,7 @@ from alembic import command
 from mechprox.calculations.runner import CalculationRunner
 from mechprox.core.config import ConfigManager
 from mechprox.core.context import AppContext, configure_logging
+from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.db import create_engine_sqlite, create_session_factory
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
@@ -23,7 +24,7 @@ def _application_data_dir() -> Path:
     return Path.home() / ".mechprox"
 
 
-def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository]:
+def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository, CatalogueRepository]:
     data_dir = _application_data_dir()
     database_url = os.environ.get("MECHPROX_DATABASE_URL")
     if database_url:
@@ -48,6 +49,7 @@ def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryReposito
     return (
         ProjectRepository(session_factory),
         ParameterRegistryRepository(session_factory),
+        CatalogueRepository(session_factory),
     )
 
 
@@ -59,7 +61,7 @@ def main() -> int:
 
     data_dir = _application_data_dir()
     config = ConfigManager(data_dir / "config.json")
-    project_repository, parameter_repository = _initialize_database()
+    project_repository, parameter_repository, catalogue_repository = _initialize_database()
     context = AppContext(config=config.data, logger=logger)
     calculation_runner = CalculationRunner(
         create_default_calculation_engine_registry(),
@@ -70,6 +72,7 @@ def main() -> int:
         project_repository,
         parameter_repository,
         calculation_runner,
+        catalogue_repository,
     )
     window.show()
     logger.info("MechProX desktop application started")

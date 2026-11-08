@@ -50,5 +50,8 @@ def test_main_window_can_be_created_and_shown(tmp_path) -> None:
         assert window.calculations.project_combo.count() == 0
         assert window.catalogue.product_table.rowCount() == 0
         assert window.catalogue.position_table.rowCount() == 0
+        assert window.engineering_data.table.rowCount() == 0
+        assert window.commercial.bom_table.rowCount() == 0
+        assert window.commercial.boq_table.rowCount() == 0
     finally:
         window.close()

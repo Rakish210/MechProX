@@ -15,6 +15,8 @@ from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
 from mechprox.ui.catalogue_page import CataloguePage
+from mechprox.ui.commercial_page import CommercialPage
+from mechprox.ui.engineering_data_page import EngineeringDataPage
 from mechprox.ui.gas_demand_page import GasDemandPage
 from mechprox.ui.parameter_registry_page import ParameterRegistryPage
 from mechprox.ui.project_page import ComingSoonPage, DashboardPage, ProjectPage
@@ -102,20 +104,16 @@ class MainWindow(QMainWindow):
         self.parameters = ParameterRegistryPage(parameter_repository)
         self.calculations = GasDemandPage(repository, calculation_runner)
         self.catalogue = CataloguePage(catalogue_repository)
+        self.engineering_data = EngineeringDataPage(repository, catalogue_repository)
+        self.commercial = CommercialPage(repository)
         pages = (
             self.dashboard,
             self.projects,
-            ComingSoonPage(
-                "Mühendislik Verisi",
-                "Ortak mühendislik veri modeli hazır. Nesne ve sistem düzenleyicisi sonraki geliştirme adımında eklenecek.",
-            ),
+            self.engineering_data,
             self.calculations,
             self.parameters,
             self.catalogue,
-            ComingSoonPage(
-                "BOM / BOQ",
-                "Fiziksel malzeme listesi (BOM) ve poz bazlı metraj/keşif (BOQ) ayrı iş akışları olarak geliştirilecek.",
-            ),
+            self.commercial,
             ComingSoonPage(
                 "CAD / BIM",
                 "AutoCAD ve Revit kendi uygulamalarında çalışacak; MechProX köprüleri üzerinden veri alışverişi yapacak.",
@@ -142,12 +140,16 @@ class MainWindow(QMainWindow):
         self.section_title.setText(self.NAVIGATION[index][0])
         self.dashboard.refresh()
         self.projects.refresh()
-        if index == 3:
+        if index == 2:
+            self.engineering_data.refresh()
+        elif index == 3:
             self.calculations.refresh()
         elif index == 4:
             self.parameters.refresh()
         elif index == 5:
             self.catalogue.refresh()
+        elif index == 6:
+            self.commercial.refresh()
 
     @staticmethod
     def _stylesheet() -> str:

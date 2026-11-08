@@ -3,8 +3,12 @@ from uuid import UUID
 
 from pydantic import Field
 
-from mechpro.domain.base import EngineeringProperty, IdentifiedModel, PropertyValue
-from mechpro.domain.base import StandardReference
+from mechpro.domain.base import (
+    EngineeringProperty,
+    IdentifiedModel,
+    PropertyValue,
+    StandardReference,
+)
 from mechpro.domain.engineering import EngineeringObjectRecord
 from mechpro.domain.enums import CalculationPurpose, CalculationState
 from mechpro.domain.parameters import ParameterRevision

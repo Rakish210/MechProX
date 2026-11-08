@@ -18,7 +18,6 @@ jobs:
         python-version: ["3.11", "3.14"]
     env:
       QT_QPA_PLATFORM: offscreen
-      MECHPRO_DATA_DIR: ${{ runner.temp }}/mechpro-data
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,4 +36,6 @@ jobs:
       - name: Tests
         run: pytest -q
       - name: Alembic
+        env:
+          MECHPRO_DATA_DIR: ${{ runner.temp }}/mechpro-data
         run: alembic upgrade head

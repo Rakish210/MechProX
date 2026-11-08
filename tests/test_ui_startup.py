@@ -1,5 +1,7 @@
 import os
 
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 from PySide6.QtWidgets import QApplication
 
 from mechpro.core.context import AppContext
@@ -9,7 +11,6 @@ from mechpro.ui.main_window import MainWindow
 
 
 def test_main_window_can_be_created_and_shown() -> None:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance()
     if app is None:
         app = QApplication([])

@@ -4,7 +4,7 @@ from datetime import date
 from typing import Protocol
 from uuid import UUID
 
-from mechprox.domain.base import PropertyValue, StandardReference
+from mechprox.domain.base import PropertyValue, SourceReference, StandardReference
 from mechprox.domain.calculations import CalculationResult, CalculationRun
 from mechprox.domain.engineering import EngineeringObjectRecord
 from mechprox.domain.enums import CalculationPurpose
@@ -48,6 +48,7 @@ class CalculationContext:
     input_objects: tuple[EngineeringObjectRecord, ...]
     parameters: Mapping[str, ParameterRevision]
     standard_references: tuple[StandardReference, ...]
+    source_references: tuple[SourceReference, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

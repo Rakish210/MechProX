@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine
@@ -65,7 +66,7 @@ def test_duplicate_product_code_is_rejected(repository: CatalogueRepository) -> 
     repository.register_product(product)
 
     with pytest.raises(CatalogueConflictError):
-        repository.register_product(product.model_copy(update={"id": product.id.__class__()}))
+        repository.register_product(product.model_copy(update={"id": uuid4()}))
 
 
 def test_mapping_requires_registered_product_and_position(

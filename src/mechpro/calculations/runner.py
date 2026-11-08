@@ -271,6 +271,11 @@ class CalculationRunner:
         )
         snapshots: list[CalculationInputSnapshot] = []
         for item in selected_objects:
+            object_revision_id = item.revision_id
+            if object_revision_id is None:
+                raise CalculationPreconditionError(
+                    f"Calculation input object '{item.id}' has no controlled revision."
+                )
             item_source_ids: set[UUID] = set(item.source_reference_ids)
             for prop in item.properties:
                 item_source_ids.update(prop.source_reference_ids)

@@ -12,7 +12,6 @@ from mechpro.calculations.contracts import (
 from mechpro.calculations.registry import CalculationEngineRegistry
 from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
-from mechpro.domain.base import StandardReference
 from mechpro.domain.calculations import (
     CalculationInputSnapshot,
     CalculationResult,
@@ -128,7 +127,7 @@ class CalculationRunner:
                 results=results,
                 warnings=output.warnings,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - engine failures must become persisted failed runs
             failed = run.model_copy(
                 update={
                     "state": CalculationState.FAILED,

@@ -40,6 +40,7 @@ class EngineeringObject(IdentifiedModel):
     geometry_reference_ids: tuple[UUID, ...] = ()
     source_reference_ids: tuple[UUID, ...] = ()
     revision_id: UUID | None = None
+    position_mapping_id: UUID | None = None
     information_origin: InformationOrigin
     validation_status: ValidationStatus = ValidationStatus.NOT_CHECKED
 

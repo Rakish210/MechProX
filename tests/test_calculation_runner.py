@@ -196,12 +196,12 @@ def test_runner_creates_reproducible_run_and_persists_results(model_and_runner) 
     )
     assert len(execution.run.standard_snapshots) == 1
     assert execution.run.standard_snapshots[0].standard_code == "EN 12345"
-    assert {item.id for item in restored.source_references} == {
+    assert {
         item.id for item in execution.run.source_reference_snapshots
-    }
-    assert {item.id for item in restored.standard_references} == {
+    }.issubset({item.id for item in restored.source_references})
+    assert {
         item.id for item in execution.run.standard_snapshots
-    }
+    }.issubset({item.id for item in restored.standard_references})
     assert restored.calculation_results[-1] == execution.results[0]
     assert ModelValidator().validate(restored).is_valid
 

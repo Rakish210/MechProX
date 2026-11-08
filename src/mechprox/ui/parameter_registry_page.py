@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.data.parameter_registry_repository import (
     ParameterAlreadyExistsError,
     ParameterRegistryRepository,
@@ -37,7 +38,7 @@ from mechprox.domain.parameters import (
 
 
 class NewParameterDialog(QDialog):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, source_repository: SourceRegistryRepository, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Yeni parametre tanımı")
         self.setMinimumWidth(480)
@@ -55,6 +56,21 @@ class NewParameterDialog(QDialog):
         self.dimension.setPlaceholderText("Örn. [pressure], [length]")
         self.unit = QLineEdit()
         self.unit.setPlaceholderText("Örn. bar, meter, watt")
+        self.source_reference = QComboBox()
+        self.standard_reference = QComboBox()
+        self.source_reference.addItem("Kaynak bağlanmadı", None)
+        self.standard_reference.addItem("Standart bağlanmadı", None)
+        reference_snapshot = source_repository.export_snapshot()
+        for reference in reference_snapshot.sources:
+            self.source_reference.addItem(
+                f"{reference.document_name or reference.uri or reference.id} — {reference.document_revision or 'rev. yok'}",
+                str(reference.id),
+            )
+        for reference in reference_snapshot.standards:
+            self.standard_reference.addItem(
+                f"{reference.standard_code} {reference.edition} — {reference.clause or 'genel'}",
+                str(reference.id),
+            )
 
         form.addRow("Parametre kodu *", self.code)
         form.addRow("Parametre adı *", self.name)
@@ -63,6 +79,8 @@ class NewParameterDialog(QDialog):
         form.addRow("Değer tipi *", self.value_kind)
         form.addRow("Boyut *", self.dimension)
         form.addRow("Kanonik birim *", self.unit)
+        form.addRow("Kaynak belge", self.source_reference)
+        form.addRow("Standart / madde", self.standard_reference)
         layout.addLayout(form)
         self.value_kind.currentIndexChanged.connect(self._update_quantity_fields)
         self._update_quantity_fields()
@@ -91,6 +109,10 @@ class NewParameterDialog(QDialog):
             value_kind=value_kind,
             expected_dimension=self.dimension.text().strip() or None,
             canonical_unit_code=self.unit.text().strip() or None,
+            source_reference_ids=(UUID(str(self.source_reference.currentData())),)
+            if self.source_reference.currentData() else (),
+            standard_reference_ids=(UUID(str(self.standard_reference.currentData())),)
+            if self.standard_reference.currentData() else (),
         )
 
     def _accept_if_valid(self) -> None:
@@ -106,6 +128,7 @@ class NewParameterRevisionDialog(QDialog):
     def __init__(
         self,
         definition: ParameterDefinition,
+        source_repository: SourceRegistryRepository,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -138,6 +161,21 @@ class NewParameterRevisionDialog(QDialog):
         self.valid_to = QLineEdit()
         self.valid_to.setPlaceholderText("YYYY-MM-DD — isteğe bağlı")
         self.change_summary = QLineEdit()
+        self.source_reference = QComboBox()
+        self.standard_reference = QComboBox()
+        self.source_reference.addItem("Kaynak bağlanmadı", None)
+        self.standard_reference.addItem("Standart bağlanmadı", None)
+        reference_snapshot = source_repository.export_snapshot()
+        for reference in reference_snapshot.sources:
+            self.source_reference.addItem(
+                f"{reference.document_name or reference.uri or reference.id} — {reference.document_revision or 'rev. yok'}",
+                str(reference.id),
+            )
+        for reference in reference_snapshot.standards:
+            self.standard_reference.addItem(
+                f"{reference.standard_code} {reference.edition} — {reference.clause or 'genel'}",
+                str(reference.id),
+            )
 
         form.addRow("Revizyon kodu *", self.revision_code)
         form.addRow("Değer *", self.value)
@@ -151,6 +189,8 @@ class NewParameterRevisionDialog(QDialog):
         form.addRow("Geçerlilik başlangıcı", self.valid_from)
         form.addRow("Geçerlilik bitişi", self.valid_to)
         form.addRow("Değişiklik açıklaması", self.change_summary)
+        form.addRow("Kaynak belge", self.source_reference)
+        form.addRow("Standart / madde", self.standard_reference)
         layout.addLayout(form)
 
         self.scope_kind.currentIndexChanged.connect(self._update_scope_fields)
@@ -234,6 +274,10 @@ class NewParameterRevisionDialog(QDialog):
             created_by=self.created_by.text().strip(),
             approved_by=self.approved_by.text().strip() or None,
             change_summary=self.change_summary.text().strip() or None,
+            source_reference_ids=(UUID(str(self.source_reference.currentData())),)
+            if self.source_reference.currentData() else (),
+            standard_reference_ids=(UUID(str(self.standard_reference.currentData())),)
+            if self.standard_reference.currentData() else (),
         )
 
     def _accept_if_valid(self) -> None:
@@ -246,9 +290,14 @@ class NewParameterRevisionDialog(QDialog):
 
 
 class ParameterRegistryPage(QWidget):
-    def __init__(self, repository: ParameterRegistryRepository) -> None:
+    def __init__(
+        self,
+        repository: ParameterRegistryRepository,
+        source_repository: SourceRegistryRepository,
+    ) -> None:
         super().__init__()
         self.repository = repository
+        self.source_repository = source_repository
         self._definitions: dict[str, ParameterDefinition] = {}
 
         layout = QVBoxLayout(self)
@@ -380,7 +429,7 @@ class ParameterRegistryPage(QWidget):
                 self.revision_table.setItem(row, column, QTableWidgetItem(value))
 
     def _create_definition(self) -> None:
-        dialog = NewParameterDialog(self)
+        dialog = NewParameterDialog(self.source_repository, self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         try:
@@ -395,7 +444,7 @@ class ParameterRegistryPage(QWidget):
         definition = self._selected_definition()
         if definition is None:
             return
-        dialog = NewParameterRevisionDialog(definition, self)
+        dialog = NewParameterRevisionDialog(definition, self.source_repository, self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         try:

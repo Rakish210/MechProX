@@ -9,12 +9,14 @@ from alembic import command
 from mechprox.calculations.runner import CalculationRunner
 from mechprox.core.config import ConfigManager
 from mechprox.core.context import AppContext, configure_logging
+from mechprox.core.module_registry import ModuleHost, ModuleRegistry
 from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.db import create_engine_sqlite, create_session_factory
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
 from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.engines.registry import create_default_calculation_engine_registry
+from mechprox.modules import create_builtin_module_specs
 from mechprox.ui.main_window import MainWindow
 
 
@@ -80,16 +82,29 @@ def main() -> int:
         parameter_repository,
         source_repository,
     )
-    window = MainWindow(
-        context,
-        project_repository,
-        parameter_repository,
-        calculation_runner,
-        catalogue_repository,
-        source_repository,
-    )
+
+    # The composition root owns concrete implementations. Modules consume the
+    # public service contracts and never construct repositories themselves.
+    context.services.register(ProjectRepository, project_repository)
+    context.services.register(ParameterRegistryRepository, parameter_repository)
+    context.services.register(CatalogueRepository, catalogue_repository)
+    context.services.register(SourceRegistryRepository, source_repository)
+    context.services.register(CalculationRunner, calculation_runner)
+
+    module_registry = ModuleRegistry()
+    for module_spec in create_builtin_module_specs():
+        module_registry.register(module_spec)
+    module_registry.discover_entry_points()
+    module_host = ModuleHost(module_registry, context)
+    module_host.start()
+
+    window = MainWindow(context, module_host)
+    app.aboutToQuit.connect(module_host.stop)
     window.show()
-    logger.info("MechProX desktop application started")
+    logger.info(
+        "MechProX desktop application started with modules: %s",
+        ", ".join(module_host.started_module_ids),
+    )
     return app.exec()
 
 

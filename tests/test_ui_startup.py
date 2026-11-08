@@ -13,6 +13,7 @@ from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.db import Base
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
+from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.engines.registry import create_default_calculation_engine_registry
 from mechprox.ui.main_window import MainWindow
 
@@ -28,12 +29,14 @@ def test_main_window_can_be_created_and_shown(tmp_path) -> None:
     repository = ProjectRepository(session_factory)
     parameter_repository = ParameterRegistryRepository(session_factory)
     catalogue_repository = CatalogueRepository(session_factory)
+    source_repository = SourceRegistryRepository(session_factory)
     runner = CalculationRunner(
         create_default_calculation_engine_registry(),
         parameter_repository,
     )
     window = MainWindow(
-        AppContext(), repository, parameter_repository, runner, catalogue_repository
+        AppContext(), repository, parameter_repository, runner, catalogue_repository,
+        source_repository,
     )
     window.show()
     app.processEvents()
@@ -42,11 +45,13 @@ def test_main_window_can_be_created_and_shown(tmp_path) -> None:
         assert window.isVisible()
         assert window.windowTitle().startswith("MechProX")
         assert window.brand_label.text() == "MechProX"
-        assert window.nav.count() == 10
-        assert window.stack.count() == 10
+        assert window.nav.count() == 11
+        assert window.stack.count() == 11
         assert window.section_title.text() == "Genel Bakış"
         assert window.projects.table.rowCount() == 0
         assert window.parameters.definition_table.rowCount() == 0
+        assert window.sources.source_table.rowCount() == 0
+        assert window.sources.standard_table.rowCount() == 0
         assert window.calculations.project_combo.count() == 0
         assert window.catalogue.product_table.rowCount() == 0
         assert window.catalogue.position_table.rowCount() == 0

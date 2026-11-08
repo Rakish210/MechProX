@@ -5,10 +5,11 @@
 - Status: completed.
 
 ## Phase 1 — Core application foundation
-- Python/PySide6 desktop shell.
-- Basic module registry, configuration, logging and SQLite/SQLAlchemy/Alembic foundation.
-- CI, linting, type checking and initial tests.
-- Status: initial foundation pushed; repository hygiene and Qt startup coverage added on the maintenance branch.
+- Python/PySide6 desktop control center.
+- SQLite/SQLAlchemy/Alembic persistence, configuration and logging.
+- CI, linting, type checking and tests.
+- Project workspace: create, list, update and restore typed project snapshots.
+- Status: foundation and first usable project-management vertical slice implemented on `development/integrated-foundation`.
 
 ## Phase 2 — Common Engineering Data Model
 - Typed, versioned domain contracts.
@@ -16,19 +17,21 @@
 - Disciplines, systems, networks, connectors, components and connections.
 - Explicit source traceability, provenance, revisions and calculation snapshots.
 - Separate product/procurement and BOQ position concepts.
-- Status: first implementation in progress on `phase-2/engineering-data-model`.
+- Status: CEDM v1 contracts, serialization and validation implemented. The synthetic gas model is test data only, not an engineering calculation.
 
 ## Phase 3 — Engineering knowledge and libraries
-- Parameter Registry and unit-aware values.
+- Parameter Registry with typed definitions and immutable revisions.
+- Approval state, provenance, standards references, effective dates and scope resolution.
 - Standards, editions, clauses, jurisdiction and effective dates.
-- Calculation-method definitions and design criteria.
 - Product, manufacturer, fitting, equipment and Revit-family references.
 - Public-works position (poz) and unit-price catalogues with source/revision tracking.
+- Status: Parameter Registry persistence and deterministic global/jurisdiction/project resolution implemented. Standards/product/poz ingestion and dedicated UI remain open.
 
 ## Phase 4 — Deterministic engineering core
 - Calculation contracts, validation framework and reproducible calculation runs.
-- First complete discipline workflow, preferably natural gas.
-- Independent reference calculations and regression tests.
+- First complete discipline workflow: natural gas.
+- Independent reference calculations, standards traceability and regression tests.
+- No AI-generated numeric engineering results; AI orchestrates deterministic tools only.
 
 ## Phase 5 — Drawing analysis and AutoCAD integration
 - 2D drawing ingestion and entity/source mapping.

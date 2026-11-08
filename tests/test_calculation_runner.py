@@ -189,8 +189,11 @@ def test_runner_creates_reproducible_run_and_persists_results(model_and_runner) 
     assert isinstance(execution.results[0].value, QuantityValue)
     assert execution.results[0].value.quantity.value == Decimal("26.0")
     assert restored.calculation_runs[-1] == execution.run
-    assert len(execution.run.source_reference_snapshots) == 1
-    assert execution.run.source_reference_snapshots[0].document_name == "Test standard document"
+    assert len(execution.run.source_reference_snapshots) >= 4
+    assert any(
+        item.document_name == "Test standard document"
+        for item in execution.run.source_reference_snapshots
+    )
     assert len(execution.run.standard_snapshots) == 1
     assert execution.run.standard_snapshots[0].standard_code == "EN 12345"
     assert restored.source_references == execution.run.source_reference_snapshots

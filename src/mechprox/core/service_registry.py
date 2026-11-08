@@ -30,6 +30,8 @@ class ServiceRegistry:
         self._frozen = False
 
     def register(self, contract: type[T], service: T) -> None:
+        if not isinstance(contract, type):
+            raise TypeError("A service contract must be a type.")
         if self._frozen:
             raise ServiceRegistryFrozenError(
                 "Application services are frozen after module configuration."

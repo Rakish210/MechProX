@@ -11,8 +11,10 @@ from PySide6.QtWidgets import (
 
 from mechprox.calculations.runner import CalculationRunner
 from mechprox.core.context import AppContext
+from mechprox.data.catalogue_repository import CatalogueRepository
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
+from mechprox.ui.catalogue_page import CataloguePage
 from mechprox.ui.gas_demand_page import GasDemandPage
 from mechprox.ui.parameter_registry_page import ParameterRegistryPage
 from mechprox.ui.project_page import ComingSoonPage, DashboardPage, ProjectPage
@@ -38,11 +40,13 @@ class MainWindow(QMainWindow):
         repository: ProjectRepository,
         parameter_repository: ParameterRegistryRepository,
         calculation_runner: CalculationRunner,
+        catalogue_repository: CatalogueRepository,
     ) -> None:
         super().__init__()
         self.context = context
         self.repository = repository
         self.parameter_repository = parameter_repository
+        self.catalogue_repository = catalogue_repository
         self.setWindowTitle("MechProX — Uzman Mekanik Tesisat Mühendisliği Platformu")
         self.resize(1280, 800)
         self.setMinimumSize(980, 640)
@@ -97,6 +101,7 @@ class MainWindow(QMainWindow):
         self.projects = ProjectPage(repository)
         self.parameters = ParameterRegistryPage(parameter_repository)
         self.calculations = GasDemandPage(repository, calculation_runner)
+        self.catalogue = CataloguePage(catalogue_repository)
         pages = (
             self.dashboard,
             self.projects,
@@ -106,10 +111,7 @@ class MainWindow(QMainWindow):
             ),
             self.calculations,
             self.parameters,
-            ComingSoonPage(
-                "Ürün ve Poz Kütüphanesi",
-                "Ürün katalogları, üretici verileri, standartlar ve kamu pozları için bilgi kayıt alanı.",
-            ),
+            self.catalogue,
             ComingSoonPage(
                 "BOM / BOQ",
                 "Fiziksel malzeme listesi (BOM) ve poz bazlı metraj/keşif (BOQ) ayrı iş akışları olarak geliştirilecek.",
@@ -144,6 +146,8 @@ class MainWindow(QMainWindow):
             self.calculations.refresh()
         elif index == 4:
             self.parameters.refresh()
+        elif index == 5:
+            self.catalogue.refresh()
 
     @staticmethod
     def _stylesheet() -> str:

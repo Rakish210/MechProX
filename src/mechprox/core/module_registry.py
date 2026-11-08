@@ -111,8 +111,8 @@ class ModulePageSpec:
 class ModuleEntryPoint(Protocol):
     name: str
 
-    def load(self) -> object:
-        """Load the provider callable from an installed distribution."""
+    def load(self) -> Callable[[], "ModuleSpec"]:
+        """Load the module specification provider from an installed distribution."""
 
 
 class PlatformModule(Protocol):

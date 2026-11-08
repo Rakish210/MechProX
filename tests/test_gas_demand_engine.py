@@ -171,3 +171,13 @@ def test_gas_engine_rejects_missing_appliance_power(gas_services) -> None:
     assert execution.run.state == CalculationState.FAILED
     assert execution.run.error_message is not None
     assert "thermal_input_power" in execution.run.error_message
+
+
+
+def test_default_registry_includes_gas_appliance_demand() -> None:
+    from mechpro.engines import create_default_calculation_engine_registry
+
+    registry = create_default_calculation_engine_registry()
+    engine = registry.get("GAS.APPLIANCE_DEMAND", "1.0.0")
+
+    assert isinstance(engine, GasApplianceDemandEngine)

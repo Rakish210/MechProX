@@ -187,7 +187,11 @@ class CommercialPage(QWidget):
                 position = positions.get(item.position_reference_id)
                 price = position.unit_price if position else None
                 currency = position.currency_code if position else None
-                amount = price * item.quantity.value if price is not None else None
+                amount = (
+                    price * item.quantity.value
+                    if price is not None and currency is not None
+                    else None
+                )
                 if amount is not None and currency:
                     totals[currency] = totals.get(currency, Decimal(0)) + amount
                 values = (

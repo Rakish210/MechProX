@@ -94,7 +94,16 @@ def main() -> int:
     module_registry = ModuleRegistry()
     for module_spec in create_builtin_module_specs():
         module_registry.register(module_spec)
-    module_registry.discover_entry_points(config.get("enabled_module_packages", ()))
+    enabled_module_packages = config.get("enabled_module_packages", ())
+    if enabled_module_packages is None:
+        enabled_module_packages = ()
+    if not isinstance(enabled_module_packages, (list, tuple)) or not all(
+        isinstance(module_id, str) for module_id in enabled_module_packages
+    ):
+        raise ValueError(
+            "The 'enabled_module_packages' setting must be a list of module package names."
+        )
+    module_registry.discover_entry_points(enabled_module_packages)
     module_host = ModuleHost(module_registry, context)
     module_host.start()
 

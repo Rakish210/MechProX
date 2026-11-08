@@ -158,5 +158,5 @@ def test_equipment_count_takeoff_uses_piece_units() -> None:
 
     assert result.bom.items[0].quantity.value == Decimal(1)
     assert result.bom.items[0].quantity.unit_code == "piece"
-    assert result.boq.items[0].quantity.value == Decimal("1")
+    assert result.boq.items[0].quantity.value == Decimal(1)
     assert result.boq.items[0].quantity.unit_code == "piece"

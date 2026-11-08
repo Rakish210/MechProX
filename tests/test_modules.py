@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import pytest
@@ -230,7 +231,7 @@ def test_discovery_loads_only_explicitly_enabled_entry_points() -> None:
     class FakeEntryPoint:
         name = "trusted-extension"
 
-        def load(self) -> object:
+        def load(self) -> Callable[[], ModuleSpec]:
             events.append("loaded")
             return lambda: spec("trusted-extension", lambda: FakeModule("trusted-extension"))
 

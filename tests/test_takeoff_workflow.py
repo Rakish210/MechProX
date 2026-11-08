@@ -60,7 +60,7 @@ def _model_with_two_pipes():
     )
     model = add_linear_element(
         model, name="Pipe B", category_code="pipe", discipline_code="PLUMBING",
-        element_type="pipe", length_value=Decimal("250"), length_unit="centimeter",
+        element_type="pipe", length_value=Decimal(250), length_unit="centimeter",
         product=product, mapping=mapping, position=position, changed_by="test",
     )
     return model
@@ -156,7 +156,7 @@ def test_equipment_count_takeoff_uses_piece_units() -> None:
 
     result = generate_takeoff(model)
 
-    assert result.bom.items[0].quantity.value == Decimal("1")
+    assert result.bom.items[0].quantity.value == Decimal(1)
     assert result.bom.items[0].quantity.unit_code == "piece"
     assert result.boq.items[0].quantity.value == Decimal("1")
     assert result.boq.items[0].quantity.unit_code == "piece"

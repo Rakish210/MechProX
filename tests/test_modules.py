@@ -3,203 +3,240 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import pytest
-from PySide6.QtWidgets import QWidget
 
 from mechprox.core.context import AppContext
 from mechprox.core.module_registry import (
     ModuleDependencyCycleError,
     ModuleDependencyError,
     ModuleHost,
-    ModuleLifecycleError,
+    ModuleHostNotStartedError,
     ModuleManifest,
+    ModulePageSpec,
     ModuleRegistry,
     ModuleRegistrationError,
+    ModuleShutdownError,
     ModuleSpec,
+    ModuleStartupError,
+)
+from mechprox.core.service_registry import (
+    ServiceAlreadyRegisteredError,
+    ServiceNotFoundError,
+    ServiceRegistry,
+    ServiceRegistryFrozenError,
 )
 
 
 @dataclass
-class FakeModule:
+class RecordingModule:
     name: str
     events: list[str] = field(default_factory=list)
-    fail_on: str | None = None
+    fail_start: bool = False
+    fail_stop: bool = False
 
     def configure(self, context: AppContext) -> None:
         self.events.append(f"{self.name}.configure")
-        if self.fail_on == "configure":
-            raise RuntimeError("configure failed")
 
     def start(self, context: AppContext) -> None:
         self.events.append(f"{self.name}.start")
-        if self.fail_on == "start":
-            raise RuntimeError("start failed")
-
-    def create_widget(self, context: AppContext) -> QWidget:
-        self.events.append(f"{self.name}.widget")
-        if self.fail_on == "widget":
-            raise RuntimeError("widget failed")
-        return QWidget()
-
-    def on_activated(self, context: AppContext, widget: QWidget) -> None:
-        self.events.append(f"{self.name}.activate")
+        if self.fail_start:
+            raise RuntimeError("deliberate startup failure")
 
     def stop(self, context: AppContext) -> None:
         self.events.append(f"{self.name}.stop")
+        if self.fail_stop:
+            raise RuntimeError("deliberate shutdown failure")
 
 
-def spec(
+def _spec(
     module_id: str,
     factory,
     *,
     dependencies: tuple[str, ...] = (),
-    order: int = 100,
+    pages: tuple[ModulePageSpec, ...] = (),
+    api_version: int = 1,
 ) -> ModuleSpec:
     return ModuleSpec(
         manifest=ModuleManifest(
             module_id=module_id,
             title=module_id.title(),
             version="1.0.0",
+            api_version=api_version,
             dependencies=dependencies,
-            navigation_order=order,
         ),
         factory=factory,
+        pages=pages,
     )
 
 
-def test_registry_rejects_duplicate_module_ids() -> None:
+def test_registry_sorts_modules_by_dependency_order() -> None:
     registry = ModuleRegistry()
-    registry.register(spec("projects", lambda: FakeModule("projects")))
+    registry.register(_spec("commercial", RecordingModule, dependencies=("engineering",)))
+    registry.register(_spec("engineering", RecordingModule, dependencies=("workspace",)))
+    registry.register(_spec("workspace", RecordingModule))
+
+    assert [item.manifest.module_id for item in registry.startup_order()] == [
+        "workspace",
+        "engineering",
+        "commercial",
+    ]
+
+
+def test_registry_rejects_duplicate_and_incompatible_modules() -> None:
+    registry = ModuleRegistry()
+    registry.register(_spec("workspace", RecordingModule))
 
     with pytest.raises(ModuleRegistrationError, match="already registered"):
-        registry.register(spec("projects", lambda: FakeModule("duplicate")))
-
-
-def test_registry_rejects_incompatible_module_api() -> None:
-    registry = ModuleRegistry()
-    incompatible = ModuleSpec(
-        manifest=ModuleManifest(
-            module_id="incompatible",
-            title="Incompatible",
-            version="1.0",
-            api_version=2,
-        ),
-        factory=lambda: FakeModule("incompatible"),
-    )
+        registry.register(_spec("workspace", RecordingModule))
 
     with pytest.raises(ModuleRegistrationError, match="requires API 2"):
-        registry.register(incompatible)
+        registry.register(_spec("legacy", RecordingModule, api_version=2))
 
 
-def test_registry_requires_declared_dependencies() -> None:
+def test_registry_rejects_missing_dependencies() -> None:
     registry = ModuleRegistry()
-    registry.register(
-        spec("commercial", lambda: FakeModule("commercial"), dependencies=("catalogue",))
-    )
+    registry.register(_spec("engineering", RecordingModule, dependencies=("workspace",)))
 
-    with pytest.raises(ModuleDependencyError, match="requires missing module 'catalogue'"):
+    with pytest.raises(ModuleDependencyError, match="requires missing module 'workspace'"):
         registry.startup_order()
 
 
 def test_registry_rejects_dependency_cycles() -> None:
     registry = ModuleRegistry()
-    registry.register(spec("alpha", lambda: FakeModule("alpha"), dependencies=("beta",)))
-    registry.register(spec("beta", lambda: FakeModule("beta"), dependencies=("alpha",)))
+    registry.register(_spec("first", RecordingModule, dependencies=("second",)))
+    registry.register(_spec("second", RecordingModule, dependencies=("first",)))
 
-    with pytest.raises(ModuleDependencyCycleError, match="dependency cycle"):
+    with pytest.raises(ModuleDependencyCycleError, match="cycle detected"):
         registry.startup_order()
 
 
-def test_startup_order_is_dependency_safe_and_navigation_order_is_separate() -> None:
+def test_registry_builds_unique_navigation_pages_in_stable_order() -> None:
     registry = ModuleRegistry()
-    registry.register(spec("commercial", lambda: FakeModule("commercial"), dependencies=("catalogue",), order=1))
-    registry.register(spec("catalogue", lambda: FakeModule("catalogue"), order=20))
-    registry.register(spec("projects", lambda: FakeModule("projects"), order=10))
+    registry.register(
+        _spec(
+            "workspace",
+            RecordingModule,
+            pages=(
+                ModulePageSpec("projects", "Projects", lambda context: object(), order=20),
+                ModulePageSpec("dashboard", "Dashboard", lambda context: object(), order=10),
+            ),
+        )
+    )
+    registry.register(
+        _spec(
+            "engineering",
+            RecordingModule,
+            dependencies=("workspace",),
+            pages=(
+                ModulePageSpec("model", "Model", lambda context: object(), order=30),
+            ),
+        )
+    )
 
-    assert [item.manifest.module_id for item in registry.startup_order()] == [
-        "catalogue", "commercial", "projects"
+    assert [page.key for page in registry.page_specs()] == [
+        "workspace.dashboard",
+        "workspace.projects",
+        "engineering.model",
     ]
-    assert [item.manifest.module_id for item in registry.all()] == [
-        "commercial", "projects", "catalogue"
-    ]
 
 
-def test_host_configures_all_modules_before_start_and_freezes_services() -> None:
+def test_registry_rejects_duplicate_page_ids_inside_module() -> None:
+    registry = ModuleRegistry()
+    duplicate_pages = (
+        ModulePageSpec("dashboard", "Dashboard", lambda context: object()),
+        ModulePageSpec("dashboard", "Duplicate", lambda context: object()),
+    )
+    with pytest.raises(ModuleRegistrationError, match="duplicate page IDs"):
+        registry.register(_spec("workspace", RecordingModule, pages=duplicate_pages))
+
+
+def test_host_configures_all_then_starts_and_stops_in_reverse_order() -> None:
     events: list[str] = []
     registry = ModuleRegistry()
-    registry.register(spec("base", lambda: _EventModule("base", events)))
     registry.register(
-        spec("extension", lambda: _EventModule("extension", events), dependencies=("base",))
+        _spec("workspace", lambda: RecordingModule("workspace", events))
+    )
+    registry.register(
+        _spec(
+            "engineering",
+            lambda: RecordingModule("engineering", events),
+            dependencies=("workspace",),
+        )
     )
     context = AppContext()
     host = ModuleHost(registry, context)
 
     host.start()
-
     assert events == [
-        "base.configure", "extension.configure", "base.start", "extension.start"
+        "workspace.configure",
+        "engineering.configure",
+        "workspace.start",
+        "engineering.start",
     ]
+    assert host.started_module_ids == ("workspace", "engineering")
     assert context.services.is_frozen
-    assert host.started_module_ids == ("base", "extension")
+    with pytest.raises(ModuleHostNotStartedError):
+        ModuleHost(ModuleRegistry(), AppContext()).page_specs()  # empty host is valid
+
     host.stop()
-    assert events[-2:] == ["extension.stop", "base.stop"]
-
-
-def test_host_reuses_workspace_and_runs_activation_hook(qt_app) -> None:
-    module = FakeModule("projects")
-    registry = ModuleRegistry()
-    registry.register(spec("projects", lambda: module))
-    host = ModuleHost(registry, AppContext())
-    host.start()
-
-    first = host.widget("projects")
-    second = host.widget("projects")
-    host.activate("projects")
-
-    assert first is second
-    assert module.events.count("projects.widget") == 1
-    assert module.events[-1] == "projects.activate"
+    assert events[-2:] == ["engineering.stop", "workspace.stop"]
     host.stop()
 
 
-def test_host_rolls_back_started_modules_when_later_module_fails() -> None:
+def test_host_rolls_back_a_module_that_fails_partway_through_startup() -> None:
     events: list[str] = []
     registry = ModuleRegistry()
-    registry.register(spec("base", lambda: _EventModule("base", events)))
+    registry.register(_spec("workspace", lambda: RecordingModule("workspace", events)))
     registry.register(
-        spec(
-            "broken",
-            lambda: _EventModule("broken", events, fail_on="start"),
-            dependencies=("base",),
+        _spec(
+            "failure",
+            lambda: RecordingModule("failure", events, fail_start=True),
+            dependencies=("workspace",),
         )
     )
     host = ModuleHost(registry, AppContext())
 
-    with pytest.raises(ModuleLifecycleError, match="failed during startup"):
+    with pytest.raises(ModuleStartupError, match="failure startup failed"):
         host.start()
 
-    assert events[-1] == "base.stop"
+    assert events[-2:] == ["failure.stop", "workspace.stop"]
     assert host.started_module_ids == ()
 
 
-class _EventModule(FakeModule):
-    def __init__(self, name: str, events: list[str], fail_on: str | None = None) -> None:
-        super().__init__(name, events, fail_on)
+def test_host_reports_shutdown_errors_after_stopping_remaining_modules() -> None:
+    events: list[str] = []
+    registry = ModuleRegistry()
+    registry.register(_spec("workspace", lambda: RecordingModule("workspace", events)))
+    registry.register(
+        _spec(
+            "engineering",
+            lambda: RecordingModule("engineering", events, fail_stop=True),
+            dependencies=("workspace",),
+        )
+    )
+    host = ModuleHost(registry, AppContext())
+    host.start()
 
-    def configure(self, context: AppContext) -> None:
-        self.events.append(f"{self.name}.configure")
+    with pytest.raises(ModuleShutdownError, match="engineering"):
+        host.stop()
 
-    def start(self, context: AppContext) -> None:
-        self.events.append(f"{self.name}.start")
-        if self.fail_on == "start":
-            raise RuntimeError("start failed")
-
-    def stop(self, context: AppContext) -> None:
-        self.events.append(f"{self.name}.stop")
+    assert events[-2:] == ["engineering.stop", "workspace.stop"]
 
 
-@pytest.fixture
-def qt_app():
-    from PySide6.QtWidgets import QApplication
+def test_service_registry_enforces_single_registration_and_freezing() -> None:
+    class Repository:
+        pass
 
-    app = QApplication.instance() or QApplication([])
-    return app
+    service = Repository()
+    registry = ServiceRegistry()
+    registry.register(Repository, service)
+
+    assert registry.get(Repository) is service
+    assert registry.require(Repository) is service
+    with pytest.raises(ServiceAlreadyRegisteredError):
+        registry.register(Repository, Repository())
+    with pytest.raises(ServiceNotFoundError):
+        registry.require(str)
+
+    registry.freeze()
+    with pytest.raises(ServiceRegistryFrozenError):
+        registry.register(str, "late")

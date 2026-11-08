@@ -52,7 +52,7 @@ class ModuleManifest:
     capabilities: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        if not _MODULE_ID_PATTERN.fullmatch(self.module_id.strip()):
+        if self.module_id != self.module_id.strip() or not _MODULE_ID_PATTERN.fullmatch(self.module_id):
             raise ModuleRegistrationError(
                 "Module IDs must start with a lowercase letter and contain only "
                 "lowercase letters, digits, dots, underscores or hyphens."
@@ -68,6 +68,10 @@ class ModuleManifest:
         if self.module_id in self.dependencies:
             raise ModuleRegistrationError(
                 f"Module '{self.module_id}' cannot depend on itself."
+            )
+        if any(not _MODULE_ID_PATTERN.fullmatch(item) for item in self.dependencies):
+            raise ModuleRegistrationError(
+                f"Module '{self.module_id}' declares an invalid dependency ID."
             )
         if any(not _MODULE_ID_PATTERN.fullmatch(item) for item in self.dependencies):
             raise ModuleRegistrationError(
@@ -91,13 +95,17 @@ class ModulePageSpec:
     order: int = 100
 
     def __post_init__(self) -> None:
-        if not _PAGE_ID_PATTERN.fullmatch(self.page_id.strip()):
+        if self.page_id != self.page_id.strip() or not _PAGE_ID_PATTERN.fullmatch(self.page_id):
             raise ModuleRegistrationError(
                 "Page IDs must start with a lowercase letter and contain only "
                 "lowercase letters, digits, hyphens or underscores."
             )
         if not self.title.strip():
             raise ModuleRegistrationError(f"Module page '{self.page_id}' requires a title.")
+        if not callable(self.factory):
+            raise ModuleRegistrationError(
+                f"Module page '{self.page_id}' requires a callable page factory."
+            )
 
 
 class ModuleEntryPoint(Protocol):
@@ -272,7 +280,7 @@ class ModuleRegistry:
             visited.add(module_id)
             ordered.append(self._modules[module_id])
 
-        for module_id in sorted(self._modules):
+        for module_id in self._modules:
             visit(module_id)
         return tuple(ordered)
 

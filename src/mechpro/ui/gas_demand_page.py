@@ -198,7 +198,8 @@ class GasDemandPage(QWidget):
                 f"{power.value} {power.unit_code}" if power else "Eksik",
                 (
                     revision_by_id[appliance.revision_id].revision_code
-                    if appliance.revision_id in revision_by_id
+                    if appliance.revision_id is not None
+                    and appliance.revision_id in revision_by_id
                     else "—"
                 ),
             )

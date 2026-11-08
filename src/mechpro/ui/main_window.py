@@ -10,7 +10,9 @@ from PySide6.QtWidgets import (
 )
 
 from mechpro.core.context import AppContext
+from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
+from mechpro.ui.parameter_registry_page import ParameterRegistryPage
 from mechpro.ui.project_page import ComingSoonPage, DashboardPage, ProjectPage
 
 
@@ -20,6 +22,7 @@ class MainWindow(QMainWindow):
         ("Projeler", "projects"),
         ("Mühendislik Verisi", "engineering"),
         ("Hesaplamalar", "calculations"),
+        ("Parametre Kütüphanesi", "parameters"),
         ("Ürün ve Poz Kütüphanesi", "library"),
         ("BOM / BOQ", "commercial"),
         ("CAD / BIM", "cad"),
@@ -27,10 +30,16 @@ class MainWindow(QMainWindow):
         ("Ayarlar", "settings"),
     )
 
-    def __init__(self, context: AppContext, repository: ProjectRepository) -> None:
+    def __init__(
+        self,
+        context: AppContext,
+        repository: ProjectRepository,
+        parameter_repository: ParameterRegistryRepository,
+    ) -> None:
         super().__init__()
         self.context = context
         self.repository = repository
+        self.parameter_repository = parameter_repository
         self.setWindowTitle("MechPro — Uzman Mekanik Tesisat Mühendisliği Platformu")
         self.resize(1280, 800)
         self.setMinimumSize(980, 640)
@@ -83,16 +92,36 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.dashboard = DashboardPage(repository)
         self.projects = ProjectPage(repository)
+        self.parameters = ParameterRegistryPage(parameter_repository)
         pages = (
             self.dashboard,
             self.projects,
-            ComingSoonPage("Mühendislik Verisi", "Ortak mühendislik veri modeli hazır. Nesne ve sistem düzenleyicisi sonraki geliştirme adımında eklenecek."),
-            ComingSoonPage("Hesaplamalar", "Deterministik hesap motorları ve sürümlü tasarım parametreleri burada yönetilecek."),
-            ComingSoonPage("Ürün ve Poz Kütüphanesi", "Ürün katalogları, üretici verileri, standartlar ve kamu pozları için bilgi kayıt alanı."),
-            ComingSoonPage("BOM / BOQ", "Fiziksel malzeme listesi (BOM) ve poz bazlı metraj/keşif (BOQ) ayrı iş akışları olarak geliştirilecek."),
-            ComingSoonPage("CAD / BIM", "AutoCAD ve Revit kendi uygulamalarında çalışacak; MechPro köprüler üzerinden veri alışverişi yapacak."),
+            ComingSoonPage(
+                "Mühendislik Verisi",
+                "Ortak mühendislik veri modeli hazır. Nesne ve sistem düzenleyicisi sonraki geliştirme adımında eklenecek.",
+            ),
+            ComingSoonPage(
+                "Hesaplamalar",
+                "Deterministik hesap motorları ve sürümlü tasarım parametreleri burada yönetilecek.",
+            ),
+            self.parameters,
+            ComingSoonPage(
+                "Ürün ve Poz Kütüphanesi",
+                "Ürün katalogları, üretici verileri, standartlar ve kamu pozları için bilgi kayıt alanı.",
+            ),
+            ComingSoonPage(
+                "BOM / BOQ",
+                "Fiziksel malzeme listesi (BOM) ve poz bazlı metraj/keşif (BOQ) ayrı iş akışları olarak geliştirilecek.",
+            ),
+            ComingSoonPage(
+                "CAD / BIM",
+                "AutoCAD ve Revit kendi uygulamalarında çalışacak; MechPro köprüler üzerinden veri alışverişi yapacak.",
+            ),
             ComingSoonPage("Raporlar", "Hesap raporları, metraj dökümleri ve proje teslim dokümanları."),
-            ComingSoonPage("Ayarlar", "Yerel çalışma alanı, yedekleme ve entegrasyon ayarları."),
+            ComingSoonPage(
+                "Ayarlar",
+                "Yerel çalışma alanı, yedekleme ve entegrasyon ayarları.",
+            ),
         )
         for page in pages:
             self.stack.addWidget(page)
@@ -110,6 +139,8 @@ class MainWindow(QMainWindow):
         self.section_title.setText(self.NAVIGATION[index][0])
         self.dashboard.refresh()
         self.projects.refresh()
+        if index == 4:
+            self.parameters.refresh()
 
     @staticmethod
     def _stylesheet() -> str:
@@ -126,11 +157,14 @@ class MainWindow(QMainWindow):
         QLabel#mutedText { color: #66758a; font-size: 10pt; }
         QLabel#statusPill { background: #e5edf6; color: #34516f; padding: 7px 12px; border-radius: 12px; }
         QLabel#metricValue { font-size: 27pt; font-weight: 700; color: #1c5d91; }
+        QLabel#sectionTitle { font-size: 16pt; font-weight: 650; color: #172334; }
         QWidget#metricCard { background: white; border: 1px solid #e0e6ed; border-radius: 9px; padding: 16px; }
         QPushButton#primaryButton { background: #1e659b; color: white; border: 0; border-radius: 6px; padding: 10px 16px; font-weight: 600; }
         QPushButton#primaryButton:hover { background: #185580; }
+        QPushButton#secondaryButton { background: #e5edf6; color: #34516f; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 16px; font-weight: 600; }
+        QPushButton#secondaryButton:hover { background: #d8e4f0; }
         QTableWidget { background: white; border: 1px solid #e0e6ed; border-radius: 8px; gridline-color: #edf0f4; }
         QHeaderView::section { background: #edf1f5; color: #44546a; border: 0; padding: 10px; font-weight: 600; }
         QTableWidget::item { padding: 8px; }
-        QLineEdit, QPlainTextEdit { background: white; border: 1px solid #cbd5e1; border-radius: 5px; padding: 7px; }
+        QLineEdit, QPlainTextEdit, QComboBox { background: white; border: 1px solid #cbd5e1; border-radius: 5px; padding: 7px; }
         """

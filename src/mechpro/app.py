@@ -9,6 +9,7 @@ from alembic import command
 from mechpro.core.config import ConfigManager
 from mechpro.core.context import AppContext, configure_logging
 from mechpro.data.db import create_engine_sqlite, create_session_factory
+from mechpro.data.parameter_registry_repository import ParameterRegistryRepository
 from mechpro.data.project_repository import ProjectRepository
 from mechpro.ui.main_window import MainWindow
 
@@ -18,7 +19,7 @@ def _application_data_dir() -> Path:
     return Path(configured).expanduser() if configured else Path.home() / ".mechpro"
 
 
-def _initialize_database() -> ProjectRepository:
+def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository]:
     data_dir = _application_data_dir()
     database_url = os.environ.get("MECHPRO_DATABASE_URL")
     if database_url:
@@ -39,7 +40,11 @@ def _initialize_database() -> ProjectRepository:
 
         Base.metadata.create_all(engine)
 
-    return ProjectRepository(create_session_factory(engine))
+    session_factory = create_session_factory(engine)
+    return (
+        ProjectRepository(session_factory),
+        ParameterRegistryRepository(session_factory),
+    )
 
 
 def main() -> int:
@@ -50,9 +55,9 @@ def main() -> int:
 
     data_dir = _application_data_dir()
     config = ConfigManager(data_dir / "config.json")
-    repository = _initialize_database()
+    project_repository, parameter_repository = _initialize_database()
     context = AppContext(config=config.data, logger=logger)
-    window = MainWindow(context, repository)
+    window = MainWindow(context, project_repository, parameter_repository)
     window.show()
     logger.info("MechPro desktop application started")
     return app.exec()

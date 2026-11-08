@@ -9,7 +9,7 @@
 - SQLite/SQLAlchemy/Alembic persistence, configuration and logging.
 - CI, linting, type checking and tests.
 - Project workspace: create, list, update and restore typed project snapshots.
-- Status: foundation and first usable project-management vertical slice implemented on `development/integrated-foundation`.
+- Status: foundation and first usable project-management vertical slice implemented.
 
 ## Phase 2 — Common Engineering Data Model
 - Typed, versioned domain contracts.
@@ -25,7 +25,7 @@
 - Standards, editions, clauses, jurisdiction and effective dates.
 - Product, manufacturer, fitting, equipment and Revit-family references.
 - Public-works position (poz) and unit-price catalogues with source/revision tracking.
-- Status: Parameter Registry persistence and deterministic global/jurisdiction/project resolution implemented. Standards/product/poz ingestion and dedicated UI remain open.
+- Status: Parameter Registry persistence, deterministic global/jurisdiction/project resolution and initial desktop management UI implemented. Standards/product/poz ingestion remains open.
 
 ## Phase 4 — Deterministic engineering core
 - Calculation contracts, validation framework and reproducible calculation runs.

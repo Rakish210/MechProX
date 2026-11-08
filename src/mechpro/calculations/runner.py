@@ -212,11 +212,12 @@ class CalculationRunner:
                 raise CalculationPreconditionError(
                     f"Calculation input object '{object_id}' belongs to another project."
                 )
-            if item.revision_id is None:
+            object_revision_id = item.revision_id
+            if object_revision_id is None:
                 raise CalculationPreconditionError(
                     f"Calculation input object '{object_id}' has no controlled revision."
                 )
-            revision = revision_by_id.get(item.revision_id)
+            revision = revision_by_id.get(object_revision_id)
             if revision is None or revision.object_id != item.id:
                 raise CalculationPreconditionError(
                     f"Calculation input object '{object_id}' has an invalid revision reference."
@@ -280,7 +281,7 @@ class CalculationRunner:
             )
             payload = {
                 "engineering_object_id": str(item.id),
-                "object_revision_id": str(item.revision_id),
+                "object_revision_id": str(object_revision_id),
                 "object_snapshot": item.model_dump(mode="json"),
                 "properties": [
                     prop.model_dump(mode="json") for prop in item.properties
@@ -296,7 +297,7 @@ class CalculationRunner:
             snapshots.append(
                 CalculationInputSnapshot(
                     engineering_object_id=item.id,
-                    object_revision_id=item.revision_id,
+                    object_revision_id=object_revision_id,
                     object_snapshot=item,
                     property_snapshots=item.properties,
                     parameter_snapshots=parameter_snapshots,

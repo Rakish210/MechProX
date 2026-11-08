@@ -13,7 +13,7 @@ from mechprox.calculations.registry import CalculationEngineRegistry
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import ProjectRepository
 from mechprox.data.source_registry_repository import SourceRegistryRepository
-from mechprox.domain.base import SourceReference, StandardReference
+from mechprox.domain.base import SourceReference
 from mechprox.domain.calculations import (
     CalculationInputSnapshot,
     CalculationResult,

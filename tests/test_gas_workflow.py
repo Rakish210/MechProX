@@ -23,6 +23,7 @@ from mechpro.domain.enums import (
     RevisionState,
 )
 from mechpro.domain.example import create_natural_gas_reference_model
+from mechpro.domain.validation import ModelValidator
 from mechpro.domain.parameters import (
     ParameterDefinition,
     ParameterRevision,
@@ -65,7 +66,7 @@ def test_add_gas_appliance_creates_typed_revision_controlled_object() -> None:
         ("Boiler", Decimal(0), "engineer"),
         ("Boiler", Decimal(-1), "engineer"),
         ("Boiler", Decimal("NaN"), "engineer"),
-        ("Boiler", Decimal("10"), ""),
+        ("Boiler", Decimal(10), ""),
     ],
 )
 def test_add_gas_appliance_rejects_invalid_inputs(
@@ -94,7 +95,7 @@ def test_new_gas_appliance_can_run_through_the_calculation_framework(tmp_path) -
     model = add_gas_appliance(
         model,
         name="New boiler",
-        thermal_input_power_kw=Decimal("60"),
+        thermal_input_power_kw=Decimal(60),
         changed_by="test-engineer",
     )
     project_repository.create(model)

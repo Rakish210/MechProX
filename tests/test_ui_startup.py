@@ -36,6 +36,8 @@ def test_main_window_can_be_created_and_shown(tmp_path) -> None:
 
     try:
         assert window.isVisible()
+        assert window.windowTitle().startswith("MechProX")
+        assert window.brand_label.text() == "MechProX"
         assert window.nav.count() == 10
         assert window.stack.count() == 10
         assert window.section_title.text() == "Genel Bakış"

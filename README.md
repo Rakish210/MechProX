@@ -58,7 +58,7 @@ By default, local application data is stored outside the repository in `%USERPRO
 
 ## Product direction
 
-See [MechProX Product Direction](docs/product/PRODUCT_DIRECTION.md) for the product scope, workflow principles and staged capability roadmap.
+See [MechProX Product Direction](docs/product/PRODUCT_DIRECTION.md) for the product scope and engineering principles. The active delivery sequence, phase status and acceptance gates are tracked in [ROADMAP.md](ROADMAP.md). All developers and AI coding agents must read [AGENTS.md](AGENTS.md) before changing the repository.
 
 ## Architecture
 

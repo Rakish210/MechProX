@@ -2,10 +2,10 @@ import os
 import sys
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config
 from PySide6.QtWidgets import QApplication
 
+from alembic import command
 from mechpro.core.config import ConfigManager
 from mechpro.core.context import AppContext, configure_logging
 from mechpro.data.db import create_engine_sqlite, create_session_factory

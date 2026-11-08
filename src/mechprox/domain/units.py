@@ -21,6 +21,15 @@ class UnitService:
     def __init__(self, definition_files: Sequence[Path] = ()) -> None:
         # Pint's runtime accepts Decimal here; its current type stub restricts this to float.
         self._registry = pint.UnitRegistry(non_int_type=Decimal)  # pyright: ignore[reportArgumentType]
+        try:
+            self._registry.Unit("piece")
+        except pint.errors.UndefinedUnitError:
+            self._registry.define("piece = []")
+        for alias in ("item = piece", "unit = piece"):
+            try:
+                self._registry.Unit(alias.split(" = ", maxsplit=1)[0])
+            except pint.errors.UndefinedUnitError:
+                self._registry.define(alias)
         for definition_file in definition_files:
             self._registry.load_definitions(str(definition_file))
 

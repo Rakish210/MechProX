@@ -1,4 +1,4 @@
-"""Initial MechPro project snapshot storage.
+"""Initial MechProX project snapshot storage.
 
 Revision ID: ad37aa2b962f
 Revises:

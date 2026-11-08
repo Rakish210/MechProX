@@ -97,7 +97,7 @@ def test_boq_unit_must_match_position_dimension() -> None:
     original_document = model.boq_documents[0]
     original_item = original_document.items[0]
     invalid_item = original_item.model_copy(
-        update={"quantity": Quantity(value=Decimal("13"), unit_code="second")}
+        update={"quantity": Quantity(value=Decimal(13), unit_code="second")}
     )
     invalid_document = original_document.model_copy(update={"items": (invalid_item,)})
     invalid_model = model.model_copy(update={"boq_documents": (invalid_document,)})

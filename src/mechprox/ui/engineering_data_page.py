@@ -195,7 +195,7 @@ class EngineeringDataPage(QWidget):
                 if isinstance(obj, Equipment)
                 else None
             )
-            product = products.get(product_id)
+            product = products.get(product_id) if product_id is not None else None
             quantity = (
                 f"{obj.length.value} {obj.length.unit_code}"
                 if isinstance(obj, LinearElement)

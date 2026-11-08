@@ -2,8 +2,8 @@ from decimal import Decimal
 from uuid import uuid4
 
 from mechpro.domain.base import EngineeringProperty, Quantity, QuantityValue, Revision
-from mechpro.domain.enums import InformationOrigin, RevisionState
 from mechpro.domain.engineering import Equipment
+from mechpro.domain.enums import InformationOrigin, RevisionState
 from mechpro.domain.model import EngineeringModel
 from mechpro.domain.project import Discipline
 from mechpro.domain.validation import ModelValidator

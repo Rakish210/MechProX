@@ -8,12 +8,18 @@ from sqlalchemy.orm import sessionmaker
 
 from mechprox.data import models  # noqa: F401
 from mechprox.data.db import Base
-from mechprox.data.source_registry_repository import SourceRegistryRepository
 from mechprox.data.parameter_registry_repository import (
     ParameterAlreadyExistsError,
     ParameterRegistryRepository,
 )
-from mechprox.domain.base import Quantity, QuantityValue, ScalarValue, SourceReference, StandardReference
+from mechprox.data.source_registry_repository import SourceRegistryRepository
+from mechprox.domain.base import (
+    Quantity,
+    QuantityValue,
+    ScalarValue,
+    SourceReference,
+    StandardReference,
+)
 from mechprox.domain.enums import InformationOrigin, SourceKind
 from mechprox.domain.parameters import (
     ParameterDefinition,

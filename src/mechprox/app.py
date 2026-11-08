@@ -25,7 +25,12 @@ def _application_data_dir() -> Path:
     return Path.home() / ".mechprox"
 
 
-def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository, CatalogueRepository, SourceRegistryRepository]:
+def _initialize_database() -> tuple[
+    ProjectRepository,
+    ParameterRegistryRepository,
+    CatalogueRepository,
+    SourceRegistryRepository,
+]:
     data_dir = _application_data_dir()
     database_url = os.environ.get("MECHPROX_DATABASE_URL")
     if database_url:
@@ -63,7 +68,12 @@ def main() -> int:
 
     data_dir = _application_data_dir()
     config = ConfigManager(data_dir / "config.json")
-    project_repository, parameter_repository, catalogue_repository, source_repository = _initialize_database()
+    (
+        project_repository,
+        parameter_repository,
+        catalogue_repository,
+        source_repository,
+    ) = _initialize_database()
     context = AppContext(config=config.data, logger=logger)
     calculation_runner = CalculationRunner(
         create_default_calculation_engine_registry(),

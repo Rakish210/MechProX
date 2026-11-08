@@ -7,8 +7,8 @@ from mechprox.domain.engineering import Equipment, LinearElement
 from mechprox.domain.enums import InformationOrigin, RevisionState
 from mechprox.domain.model import EngineeringModel
 from mechprox.domain.project import Discipline
-from mechprox.domain.validation import ModelValidator
 from mechprox.domain.units import UnitService
+from mechprox.domain.validation import ModelValidator
 
 
 class EngineeringObjectInputError(ValueError):
@@ -130,6 +130,10 @@ def add_equipment(
                   equipment_type.strip(), changed_by.strip())
     if not all(normalized):
         raise EngineeringObjectInputError("Name, category, discipline, equipment type and creator are required.")
+    if not UnitService().are_compatible("piece", product.unit_code):
+        raise EngineeringObjectInputError(
+            f"Equipment product unit '{product.unit_code}' must be a piece-count unit."
+        )
     if mapping is not None and mapping.measurement_rule_code.upper() != "COUNT":
         raise EngineeringObjectInputError("Equipment requires a COUNT BOQ mapping.")
     object_id = uuid4()

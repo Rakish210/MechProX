@@ -1,4 +1,5 @@
 from mechpro.domain.base import Revision
+from mechpro.domain.enums import CalculationPurpose
 from mechpro.domain.validation_context import ValidationContext
 
 
@@ -9,6 +10,14 @@ def validate_calculation_records(ctx: ValidationContext) -> None:
         path = f"calculation_runs[{index}]"
         if run.project_id != model.project.id:
             ctx.add("wrong_project", "Calculation run belongs to a different project.", path)
+        if run.purpose == CalculationPurpose.ENGINEERING:
+            embedded_standard_ids = {item.id for item in run.standard_snapshots}
+            if embedded_standard_ids != set(run.standard_reference_ids):
+                ctx.add(
+                    "calculation_standard_snapshot_mismatch",
+                    "Engineering calculations must retain snapshots of all referenced standards.",
+                    f"{path}.standard_snapshots",
+                )
         for standard_id in run.standard_reference_ids:
             if standard_id not in ctx.standard_ids:
                 ctx.add(
@@ -25,6 +34,46 @@ def validate_calculation_records(ctx: ValidationContext) -> None:
                     "Calculation input references an unknown engineering object.",
                     input_path,
                 )
+            if run.purpose == CalculationPurpose.ENGINEERING:
+                if snapshot.object_snapshot is None:
+                    ctx.add(
+                        "calculation_object_snapshot_missing",
+                        "Engineering calculations must retain a full object snapshot.",
+                        input_path,
+                    )
+                else:
+                    if (
+                        snapshot.object_snapshot.id != snapshot.engineering_object_id
+                        or snapshot.object_snapshot.revision_id != snapshot.object_revision_id
+                    ):
+                        ctx.add(
+                            "calculation_object_snapshot_mismatch",
+                            "The embedded object snapshot does not match its object/revision identifiers.",
+                            input_path,
+                        )
+                    if snapshot.object_snapshot.properties != snapshot.property_snapshots:
+                        ctx.add(
+                            "calculation_property_snapshot_mismatch",
+                            "Property snapshots do not match the embedded engineering object snapshot.",
+                            input_path,
+                        )
+                for parameter_index, parameter in enumerate(snapshot.parameter_snapshots):
+                    if parameter.revision_snapshot is None:
+                        ctx.add(
+                            "calculation_parameter_snapshot_missing",
+                            "Engineering calculations must retain full parameter revision snapshots.",
+                            f"{input_path}.parameter_snapshots[{parameter_index}]",
+                        )
+                    elif (
+                        parameter.parameter_revision != str(parameter.revision_snapshot.id)
+                        or parameter.value != parameter.revision_snapshot.value
+                    ):
+                        ctx.add(
+                            "calculation_parameter_snapshot_mismatch",
+                            "Parameter value/revision identifiers do not match the embedded revision snapshot.",
+                            f"{input_path}.parameter_snapshots[{parameter_index}]",
+                        )
+
             revision = ctx.revision_by_id.get(snapshot.object_revision_id)
             if revision is None or revision.object_id != snapshot.engineering_object_id:
                 ctx.add(

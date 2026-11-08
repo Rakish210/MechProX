@@ -3,8 +3,15 @@ from uuid import UUID
 
 from pydantic import Field
 
-from mechpro.domain.base import EngineeringProperty, IdentifiedModel, PropertyValue
+from mechpro.domain.base import (
+    EngineeringProperty,
+    IdentifiedModel,
+    PropertyValue,
+    StandardReference,
+)
+from mechpro.domain.engineering import EngineeringObjectRecord
 from mechpro.domain.enums import CalculationPurpose, CalculationState
+from mechpro.domain.parameters import ParameterRevision
 
 
 class ParameterSnapshot(IdentifiedModel):
@@ -12,11 +19,13 @@ class ParameterSnapshot(IdentifiedModel):
     value: PropertyValue
     parameter_revision: str
     source_reference_ids: tuple[UUID, ...] = ()
+    revision_snapshot: ParameterRevision | None = None
 
 
 class CalculationInputSnapshot(IdentifiedModel):
     engineering_object_id: UUID
     object_revision_id: UUID
+    object_snapshot: EngineeringObjectRecord | None = None
     property_snapshots: tuple[EngineeringProperty, ...] = ()
     parameter_snapshots: tuple[ParameterSnapshot, ...] = ()
     source_reference_ids: tuple[UUID, ...] = ()
@@ -35,8 +44,11 @@ class CalculationRun(IdentifiedModel):
     completed_at: datetime | None = None
     input_snapshots: tuple[CalculationInputSnapshot, ...]
     standard_reference_ids: tuple[UUID, ...] = ()
+    standard_snapshots: tuple[StandardReference, ...] = ()
     input_hash: str = Field(min_length=1)
     output_hash: str | None = None
+    warnings: tuple[str, ...] = ()
+    error_message: str | None = None
 
 
 class CalculationResult(IdentifiedModel):

@@ -32,6 +32,7 @@
 - First complete discipline workflow: natural gas.
 - Independent reference calculations, standards traceability and regression tests.
 - No AI-generated numeric engineering results; AI orchestrates deterministic tools only.
+- Status: calculation engine registry, explicit request/context contracts, revision-gated input capture, full object/parameter/standard snapshots, deterministic input/output hashes, result provenance and persisted failed/completed runs implemented. No production engineering equation has been approved or seeded yet.
 
 ## Phase 5 — Drawing analysis and AutoCAD integration
 - 2D drawing ingestion and entity/source mapping.

@@ -28,6 +28,14 @@ def _application_data_dir() -> Path:
     return data_dir
 
 
+def _database_file(data_dir: Path) -> Path:
+    current_database = data_dir / "mechprox.db"
+    legacy_database = data_dir / "mechpro.db"
+    if not current_database.exists() and legacy_database.exists():
+        return legacy_database
+    return current_database
+
+
 def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryRepository]:
     data_dir = _application_data_dir()
     database_url = os.environ.get("MECHPROX_DATABASE_URL") or os.environ.get(
@@ -38,7 +46,7 @@ def _initialize_database() -> tuple[ProjectRepository, ParameterRegistryReposito
 
         engine = create_engine(database_url, future=True)
     else:
-        engine = create_engine_sqlite(data_dir / "mechprox.db")
+        engine = create_engine_sqlite(_database_file(data_dir))
 
     project_root = Path(__file__).resolve().parents[2]
     alembic_path = project_root / "alembic.ini"

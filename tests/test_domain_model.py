@@ -80,7 +80,13 @@ def test_unknown_unit_is_rejected() -> None:
 
 def test_domain_contract_rejects_unstructured_unknown_fields() -> None:
     with pytest.raises(ValidationError):
-        Quantity(value=Decimal(2), unit_code="meter", arbitrary_engineering_data={})
+        Quantity.model_validate(
+            {
+                "value": Decimal(2),
+                "unit_code": "meter",
+                "arbitrary_engineering_data": {},
+            }
+        )
 
 
 def test_bom_and_boq_are_distinct_domain_records() -> None:

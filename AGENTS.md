@@ -26,7 +26,7 @@ Read this file before making changes to MechProX.
 1. Identify the exact roadmap phase and the smallest end-to-end acceptance target.
 2. Inspect existing contracts, repositories, migrations, tests and adapters before adding a new abstraction.
 3. Write or update an ADR when a significant architectural choice is required.
-4. Create a focused feature branch from the latest `main`.
+4. Reuse the single active implementation branch until its acceptance criteria are complete. Do not create a branch per file, commit, small task or module. Keep `main` plus at most one active implementation branch.
 5. Implement domain contracts and application use cases before presentation-only work.
 6. Keep UI, persistence, external CAD/BIM bridges and AI providers behind typed boundaries.
 7. Add unit, integration, migration and regression tests appropriate to the change.
@@ -37,7 +37,7 @@ Read this file before making changes to MechProX.
    - `alembic upgrade head`
    - Relevant Qt startup and real-host integration tests.
 9. Update the roadmap and related technical documentation in the same pull request.
-10. Open a pull request describing scope, roadmap phase, design decisions, tests, limitations and any manual verification still required.
+10. Open one pull request for the completed coherent milestone, describing scope, roadmap phase, design decisions, tests, limitations and any manual verification still required. After merge, remove the completed remote branch; do not leave merged work branches behind.
 
 ## Data and safety rules
 

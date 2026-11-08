@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
+from PySide6.QtCore import QDate
 from PySide6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -93,7 +94,7 @@ class GasDemandPage(QWidget):
         self.effective_date = QDateEdit()
         self.effective_date.setCalendarPopup(True)
         self.effective_date.setDisplayFormat("yyyy-MM-dd")
-        self.effective_date.setDate(date.today())
+        self.effective_date.setDate(QDate.currentDate())
         calculation_form.addRow("Mevzuat alanı", self.jurisdiction)
         calculation_form.addRow("Geçerlilik tarihi", self.effective_date)
         layout.addLayout(calculation_form)
@@ -245,7 +246,11 @@ class GasDemandPage(QWidget):
                 method_revision="1.0.0",
                 input_object_ids=tuple(item.id for item in appliances),
                 parameter_codes=(self.PARAMETER_CODE,),
-                effective_date=self.effective_date.date().toPython(),
+                effective_date=date(
+                    self.effective_date.date().year(),
+                    self.effective_date.date().month(),
+                    self.effective_date.date().day(),
+                ),
                 jurisdiction_code=self.jurisdiction.text().strip().upper() or None,
                 purpose=CalculationPurpose.ENGINEERING,
             )

@@ -107,7 +107,7 @@ def model_and_runner(repositories):
         ParameterRevision(
             definition_id=definition.id,
             revision_code="A",
-            value=ScalarValue(value=Decimal("2")),
+            value=ScalarValue(value=Decimal(2)),
             status=ParameterRevisionStatus.APPROVED,
             origin=InformationOrigin.USER_INPUT,
             created_by="test",

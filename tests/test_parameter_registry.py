@@ -97,6 +97,7 @@ def test_parameter_registry_resolves_project_override(
     )
 
     assert resolved.id == project_revision.id
+    assert isinstance(resolved.value, QuantityValue)
     assert resolved.value.quantity.value == Decimal("3.0")
 
 

@@ -18,6 +18,37 @@ def validate_calculation_records(ctx: ValidationContext) -> None:
                     "Engineering calculations must retain snapshots of all referenced standards.",
                     f"{path}.standard_snapshots",
                 )
+        run_source_snapshot_ids = {item.id for item in run.source_reference_snapshots}
+        for source_index, source in enumerate(run.source_reference_snapshots):
+            if source.id not in ctx.source_ids:
+                ctx.add(
+                    "calculation_source_snapshot_missing",
+                    "Calculation source snapshot is not present in the project model.",
+                    f"{path}.source_reference_snapshots[{source_index}]",
+                )
+        if run_source_snapshot_ids:
+            referenced_source_ids = {
+                source_id
+                for snapshot in run.input_snapshots
+                for source_id in snapshot.source_reference_ids
+            }
+            referenced_source_ids.update(
+                source_id
+                for snapshot in run.input_snapshots
+                for parameter in snapshot.parameter_snapshots
+                for source_id in parameter.source_reference_ids
+            )
+            referenced_source_ids.update(
+                standard.source_reference_id
+                for standard in run.standard_snapshots
+                if standard.source_reference_id is not None
+            )
+            if not referenced_source_ids.issubset(run_source_snapshot_ids):
+                ctx.add(
+                    "calculation_source_snapshot_incomplete",
+                    "Calculation run does not retain every source document used by its inputs and standards.",
+                    f"{path}.source_reference_snapshots",
+                )
         for standard_id in run.standard_reference_ids:
             if standard_id not in ctx.standard_ids:
                 ctx.add(

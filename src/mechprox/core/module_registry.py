@@ -8,7 +8,6 @@ from typing import Any, Protocol
 
 from mechprox.core.context import AppContext
 
-
 MODULE_ENTRY_POINT_GROUP = "mechprox.modules"
 PLATFORM_MODULE_API_VERSION = 1
 _MODULE_ID_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]*$")

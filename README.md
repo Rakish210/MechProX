@@ -14,11 +14,11 @@ MechPro is a Python-first desktop engineering platform. It coordinates a shared,
 - Versioned Parameter Registry with immutable revisions, approval state, source traceability, validity windows and project/jurisdiction/global resolution.
 - Parameter Registry UI for creating definitions, adding revisions and reviewing revision history.
 - Deterministic calculation execution framework with engine registry, declared input context, immutable object/parameter/standard snapshots, reproducible hashes and persisted run outcomes.
-- First deterministic gas method: appliance thermal input power to reference volumetric gas flow using the approved, user-supplied LHV parameter.
+- First desktop engineering workflow: add revision-controlled gas appliances and calculate reference volumetric demand using an approved, user-supplied LHV parameter.
 - Source provenance, revisions, calculation snapshots and distinct BOM/BOQ contracts.
 - Ruff, Pyright, Pytest and Alembic migration workflow.
 
-The current desktop vertical slice supports project creation and local persistence. Parameter Registry persistence, deterministic value resolution and basic registry management are implemented. The calculation execution framework and a first gas appliance demand method are implemented. Gas pipe sizing and pressure-loss calculations, engineering editors, live product/poz catalogues, production BOM/BOQ generation and CAD/BIM operations are not yet implemented.
+The current desktop vertical slice supports project creation and local persistence. Parameter Registry persistence, deterministic value resolution and basic registry management are implemented. The first gas appliance demand method is available in the desktop calculation page. The LHV must be entered and approved in Parameter Registry before calculation. Gas pipe sizing and pressure-loss calculations, engineering editors, live product/poz catalogues, production BOM/BOQ generation and CAD/BIM operations are not yet implemented.
 
 ## Technology baseline
 

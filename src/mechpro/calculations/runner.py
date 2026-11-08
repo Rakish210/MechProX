@@ -315,7 +315,7 @@ class CalculationRunner:
             standard_by_id[item] for item in used_standard_ids
         )
         context = CalculationContext(
-            model=model,
+            project=model.project,
             request=request,
             input_objects=tuple(selected_objects),
             parameters=parameters,

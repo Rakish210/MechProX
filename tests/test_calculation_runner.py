@@ -18,12 +18,20 @@ from mechprox.data import models  # noqa: F401
 from mechprox.data.db import Base
 from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
 from mechprox.data.project_repository import CalculationAppendError, ProjectRepository
-from mechprox.domain.base import Quantity, QuantityValue, ScalarValue
+from mechprox.data.source_registry_repository import SourceRegistryRepository
+from mechprox.domain.base import (
+    Quantity,
+    QuantityValue,
+    ScalarValue,
+    SourceReference,
+    StandardReference,
+)
 from mechprox.domain.engineering import LinearElement
 from mechprox.domain.enums import (
     CalculationPurpose,
     CalculationState,
     InformationOrigin,
+    SourceKind,
 )
 from mechprox.domain.example import create_natural_gas_reference_model
 from mechprox.domain.model import EngineeringModel
@@ -86,21 +94,43 @@ def repositories(tmp_path):
     engine = create_engine(f"sqlite:///{tmp_path / 'calculation.db'}")
     Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
-    return ProjectRepository(factory), ParameterRegistryRepository(factory)
+    return (
+        ProjectRepository(factory),
+        ParameterRegistryRepository(factory),
+        SourceRegistryRepository(factory),
+    )
 
 
 @pytest.fixture
 def model_and_runner(repositories):
-    project_repository, parameter_repository = repositories
+    project_repository, parameter_repository, source_repository = repositories
     model = create_natural_gas_reference_model()
     project_repository.create(model)
 
+    source = SourceReference(
+        source_kind=SourceKind.STANDARD,
+        document_name="Test standard document",
+        document_revision="2024",
+        uri="https://example.invalid/test-standard.pdf",
+        origin=InformationOrigin.USER_INPUT,
+    )
+    source_repository.register_source(source)
+    standard = StandardReference(
+        standard_code="EN 12345",
+        title="Test calculation standard",
+        edition="2024",
+        clause="6.2.1",
+        source_reference_id=source.id,
+    )
+    source_repository.register_standard(standard)
     definition = ParameterDefinition(
         code="TEST.LENGTH_FACTOR",
         name="Test length factor",
         discipline_code="GENERAL",
         category_code="TEST",
         value_kind=ParameterValueKind.SCALAR,
+        source_reference_ids=(source.id,),
+        standard_reference_ids=(standard.id,),
     )
     parameter_repository.register_definition(definition)
     parameter_repository.add_revision(
@@ -118,7 +148,7 @@ def model_and_runner(repositories):
     registry = CalculationEngineRegistry()
     registry.register(TotalLengthTestEngine())
     registry.register(FailingTestEngine())
-    runner = CalculationRunner(registry, parameter_repository)
+    runner = CalculationRunner(registry, parameter_repository, source_repository)
     return model, project_repository, runner
 
 
@@ -159,6 +189,10 @@ def test_runner_creates_reproducible_run_and_persists_results(model_and_runner) 
     assert isinstance(execution.results[0].value, QuantityValue)
     assert execution.results[0].value.quantity.value == Decimal("26.0")
     assert restored.calculation_runs[-1] == execution.run
+    assert execution.run.source_reference_snapshots == (source,)
+    assert execution.run.standard_snapshots == (standard,)
+    assert restored.source_references == (source,)
+    assert restored.standard_references == (standard,)
     assert restored.calculation_results[-1] == execution.results[0]
     assert ModelValidator().validate(restored).is_valid
 
@@ -247,7 +281,7 @@ def test_runner_rejects_result_referencing_uncaptured_objects(model_and_runner) 
 
     registry = CalculationEngineRegistry()
     registry.register(InvalidResultEngine())
-    invalid_runner = CalculationRunner(registry, runner._parameters)
+    invalid_runner = CalculationRunner(registry, runner._parameters, runner._sources)
 
     execution = invalid_runner.run(
         model,

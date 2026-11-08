@@ -70,3 +70,70 @@ class ParameterRevisionRecord(Base):
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     model_json: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProductCatalogRecord(Base):
+    """Global catalogue index and canonical typed product record."""
+
+    __tablename__ = "catalogue_products"
+    __table_args__ = (
+        UniqueConstraint(
+            "catalogue_code", "product_code", name="uq_catalogue_product_code"
+        ),
+        Index("ix_catalogue_products_category", "category_code", "name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    catalogue_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    product_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    category_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    model_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PositionCatalogRecord(Base):
+    """Global BOQ/public-works position catalogue index."""
+
+    __tablename__ = "catalogue_positions"
+    __table_args__ = (
+        UniqueConstraint(
+            "catalogue_code", "position_code", name="uq_catalogue_position_code"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    catalogue_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    position_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    unit_code: Mapped[str] = mapped_column(String(40), nullable=False)
+    jurisdiction: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    model_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PositionProductMappingRecord(Base):
+    """Persistent, versioned many-to-many mapping between BOQ positions and products."""
+
+    __tablename__ = "catalogue_position_product_mappings"
+    __table_args__ = (
+        UniqueConstraint(
+            "mapping_code", "mapping_version", name="uq_catalogue_mapping_version"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    position_reference_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("catalogue_positions.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    product_reference_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("catalogue_products.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    mapping_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    mapping_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    model_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

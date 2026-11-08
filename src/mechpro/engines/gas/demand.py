@@ -20,7 +20,7 @@ class GasApplianceDemandEngine(CalculationEngine):
 
     method_code = "GAS.APPLIANCE_DEMAND"
     method_revision = "1.0.0"
-    engine_name = "MechPro Gas Appliance Demand"
+    engine_name = "MechProX Gas Appliance Demand"
     engine_version = "1.0.0"
     POWER_PROPERTY_KEY = "thermal_input_power"
     LOWER_HEATING_VALUE_PARAMETER = "GAS.LOWER_HEATING_VALUE"

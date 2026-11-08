@@ -43,7 +43,7 @@ def add_gas_appliance(
         revision_code="A",
         state=RevisionState.DRAFT,
         changed_by=changed_by.strip(),
-        change_summary="Initial gas appliance record created in MechPro.",
+        change_summary="Initial gas appliance record created in MechProX.",
     )
     appliance = Equipment(
         id=appliance_id,

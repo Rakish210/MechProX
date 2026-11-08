@@ -47,11 +47,11 @@ pytest -q
 alembic upgrade head
 ```
 
-By default, new installations store local data outside the repository in `%USERPROFILE%\.mechprox`. Set `MECHPROX_DATA_DIR` or `MECHPROX_DATABASE_URL` to override the location. For continuity, an existing `.mechpro` folder and the former `MECHPRO_*` environment variables are detected as legacy fallbacks; existing project data is not deleted.
+By default, local application data is stored outside the repository in `%USERPROFILE%\\.mechprox`. Set `MECHPROX_DATA_DIR` or `MECHPROX_DATABASE_URL` to override the location.
 
 ## Product direction
 
-See [Product Direction and Reference Analysis](docs/product/PRODUCT_DIRECTION.md) for the capabilities we intend to develop from the supplied MTYCAD, Tesisat.org, OSKA and Aginera references. Those sites are inspiration for workflows, not implementation specifications.
+See [MechProX Product Direction](docs/product/PRODUCT_DIRECTION.md) for the product scope, workflow principles and staged capability roadmap.
 
 ## Architecture
 

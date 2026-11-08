@@ -13,18 +13,18 @@ target_metadata = Base.metadata
 
 
 def configure_database_url() -> None:
-    configured_url = os.environ.get("MECHPRO_DATABASE_URL")
+    configured_url = os.environ.get("MECHPROX_DATABASE_URL")
 
     if configured_url:
         database_url = make_url(configured_url)
     else:
-        configured_data_dir = os.environ.get("MECHPRO_DATA_DIR")
+        configured_data_dir = os.environ.get("MECHPROX_DATA_DIR")
         data_dir = (
             Path(configured_data_dir).expanduser()
             if configured_data_dir
-            else Path.home() / ".mechpro"
+            else Path.home() / ".mechprox"
         )
-        database_path = (data_dir / "mechpro.db").resolve()
+        database_path = (data_dir / "mechprox.db").resolve()
         database_url = URL.create("sqlite", database=str(database_path))
 
     if (

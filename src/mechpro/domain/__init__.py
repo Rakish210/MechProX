@@ -1,4 +1,4 @@
-"""Pure domain contracts for the MechPro engineering platform."""
+"""Pure domain contracts for the MechProX engineering platform."""
 
 from mechpro.domain.model import EngineeringModel
 from mechpro.domain.serialization import deserialize_model, serialize_model

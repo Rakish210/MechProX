@@ -2,7 +2,7 @@
 
 ## Purpose
 
-CEDM is the shared, versioned domain contract for the MechPro platform. Engineering modules, drawing adapters, BIM adapters, quantity takeoff, commercial workflows and reports exchange typed records through this model.
+CEDM is the shared, versioned domain contract for the MechProX platform. Engineering modules, drawing adapters, BIM adapters, quantity takeoff, commercial workflows and reports exchange typed records through this model.
 
 The domain package is deliberately independent of PySide6, SQLAlchemy, SQLite, AutoCAD, Revit and AI providers. Persistence and external integrations are adapters around the domain contracts.
 

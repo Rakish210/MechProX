@@ -9,51 +9,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from mechprox.calculations.runner import CalculationRunner
 from mechprox.core.context import AppContext
-from mechprox.data.catalogue_repository import CatalogueRepository
-from mechprox.data.parameter_registry_repository import ParameterRegistryRepository
-from mechprox.data.project_repository import ProjectRepository
-from mechprox.data.source_registry_repository import SourceRegistryRepository
-from mechprox.ui.catalogue_page import CataloguePage
-from mechprox.ui.commercial_page import CommercialPage
-from mechprox.ui.engineering_data_page import EngineeringDataPage
-from mechprox.ui.gas_demand_page import GasDemandPage
-from mechprox.ui.parameter_registry_page import ParameterRegistryPage
-from mechprox.ui.project_page import ComingSoonPage, DashboardPage, ProjectPage
-from mechprox.ui.source_registry_page import SourceRegistryPage
+from mechprox.core.module_registry import ModuleHost, RegisteredModulePage
 
 
 class MainWindow(QMainWindow):
-    NAVIGATION = (
-        ("Genel Bakış", "dashboard"),
-        ("Projeler", "projects"),
-        ("Mühendislik Verisi", "engineering"),
-        ("Hesaplamalar", "calculations"),
-        ("Parametre Kütüphanesi", "parameters"),
-        ("Kaynak ve Standartlar", "sources"),
-        ("Ürün ve Poz Kütüphanesi", "library"),
-        ("BOM / BOQ", "commercial"),
-        ("CAD / BIM", "cad"),
-        ("Raporlar", "reports"),
-        ("Ayarlar", "settings"),
-    )
+    """Application shell. Navigation is composed entirely from installed modules."""
 
-    def __init__(
-        self,
-        context: AppContext,
-        repository: ProjectRepository,
-        parameter_repository: ParameterRegistryRepository,
-        calculation_runner: CalculationRunner,
-        catalogue_repository: CatalogueRepository,
-        source_repository: SourceRegistryRepository,
-    ) -> None:
+    def __init__(self, context: AppContext, module_host: ModuleHost) -> None:
         super().__init__()
         self.context = context
-        self.repository = repository
-        self.parameter_repository = parameter_repository
-        self.catalogue_repository = catalogue_repository
-        self.source_repository = source_repository
+        self.module_host = module_host
+        self._page_specs: tuple[RegisteredModulePage, ...] = module_host.page_specs()
+        if not self._page_specs:
+            raise RuntimeError("No module pages were registered; cannot build the workspace.")
+
         self.setWindowTitle("MechProX — Uzman Mekanik Tesisat Mühendisliği Platformu")
         self.resize(1280, 800)
         self.setMinimumSize(980, 640)
@@ -81,10 +51,8 @@ class MainWindow(QMainWindow):
         self.nav = QListWidget()
         self.nav.setObjectName("navigation")
         self.nav.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        for title, _ in self.NAVIGATION:
-            self.nav.addItem(title)
         side_layout.addWidget(self.nav, 1)
-        version = QLabel("LOCAL WORKSPACE  ·  v0.2")
+        version = QLabel("LOCAL WORKSPACE  ·  MODULAR")
         version.setObjectName("brandTagline")
         side_layout.addWidget(version)
         root.addWidget(sidebar)
@@ -94,7 +62,7 @@ class MainWindow(QMainWindow):
         content_layout.setContentsMargins(30, 24, 30, 24)
         content_layout.setSpacing(18)
         header = QHBoxLayout()
-        self.section_title = QLabel("Genel Bakış")
+        self.section_title = QLabel("")
         self.section_title.setObjectName("sectionTitle")
         header.addWidget(self.section_title)
         header.addStretch()
@@ -104,35 +72,17 @@ class MainWindow(QMainWindow):
         content_layout.addLayout(header)
 
         self.stack = QStackedWidget()
-        self.dashboard = DashboardPage(repository)
-        self.projects = ProjectPage(repository)
-        self.parameters = ParameterRegistryPage(parameter_repository, source_repository)
-        self.calculations = GasDemandPage(repository, calculation_runner)
-        self.catalogue = CataloguePage(catalogue_repository)
-        self.sources = SourceRegistryPage(source_repository)
-        self.engineering_data = EngineeringDataPage(repository, catalogue_repository)
-        self.commercial = CommercialPage(repository)
-        pages = (
-            self.dashboard,
-            self.projects,
-            self.engineering_data,
-            self.calculations,
-            self.parameters,
-            self.sources,
-            self.catalogue,
-            self.commercial,
-            ComingSoonPage(
-                "CAD / BIM",
-                "AutoCAD ve Revit kendi uygulamalarında çalışacak; MechProX köprüleri üzerinden veri alışverişi yapacak.",
-            ),
-            ComingSoonPage("Raporlar", "Hesap raporları, metraj dökümleri ve proje teslim dokümanları."),
-            ComingSoonPage(
-                "Ayarlar",
-                "Yerel çalışma alanı, yedekleme ve entegrasyon ayarları.",
-            ),
-        )
-        for page in pages:
+        self._pages: list[QWidget] = []
+        for page_spec in self._page_specs:
+            page = page_spec.factory(context)
+            if not isinstance(page, QWidget):
+                raise TypeError(
+                    f"Module page '{page_spec.key}' did not create a QWidget."
+                )
+            self.nav.addItem(page_spec.title)
             self.stack.addWidget(page)
+            self._pages.append(page)
+
         content_layout.addWidget(self.stack, 1)
         root.addWidget(content, 1)
 
@@ -141,24 +91,23 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(self._stylesheet())
 
     def _navigate(self, index: int) -> None:
-        if index < 0 or index >= self.stack.count():
+        if index < 0 or index >= len(self._pages):
             return
         self.stack.setCurrentIndex(index)
-        self.section_title.setText(self.NAVIGATION[index][0])
-        self.dashboard.refresh()
-        self.projects.refresh()
-        if index == 2:
-            self.engineering_data.refresh()
-        elif index == 3:
-            self.calculations.refresh()
-        elif index == 4:
-            self.parameters.refresh()
-        elif index == 5:
-            self.sources.refresh()
-        elif index == 6:
-            self.catalogue.refresh()
-        elif index == 7:
-            self.commercial.refresh()
+        self.section_title.setText(self._page_specs[index].title)
+        page = self._pages[index]
+        refresh = getattr(page, "refresh", None)
+        if callable(refresh):
+            try:
+                refresh()
+                self.status_label.setText("Yerel veritabanı")
+            except Exception as exc:  # noqa: BLE001 - isolate page refresh failures
+                self.context.logger.exception(
+                    "Module page '%s' failed to refresh",
+                    self._page_specs[index].key,
+                )
+                self.status_label.setText("Modül yenileme hatası")
+                self.context.logger.error("%s", exc)
 
     @staticmethod
     def _stylesheet() -> str:
